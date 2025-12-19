@@ -15,4 +15,5 @@ dependencies = [
     "httpx>=0.28.1",
     "aiohttp>=3.13.2",
     "aiosqlite>=0.22.0",
+    "sqlalchemy>=2.0.45",
 ]
