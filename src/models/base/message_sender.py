@@ -4,8 +4,9 @@ class MessageSender(ABC):
     @abstractmethod
     async def send_message(
         self, 
-        recipient_id: str, 
-        content: str
+        content: str,
+        recipient_id: str | None = None, 
+        username: str | None = None
     ) -> bool:
         """Отправить сообщение получателю на любой поддерживаемой платформе"""
         ...

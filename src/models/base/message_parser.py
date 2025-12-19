@@ -3,7 +3,6 @@ from typing import Optional
 
 from src.models.client_model import ClientMessage
 
-
 class MessageParser(ABC):
     @abstractmethod
     def get_new_message(self) -> Optional[ClientMessage]:
