@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from db.models import Users, to_client_model
 from src.models.client_model import ClientModel, ClientMessage
@@ -18,31 +19,46 @@ class UsersORM:
         try:
             user_dict = user.model_dump()
             
-            # message_history в JSON
-            message_history = [
-                {
-                    "source": msg.source,
-                    "content": msg.content,
-                    "timestamp": msg.timestamp.isoformat()
-                }
-                for msg in user_dict.get('message_history', [])
-            ]
+            message_history = []
+            for msg in user_dict.get('message_history', []):
+                if isinstance(msg, dict):
+                    timestamp = msg.get('timestamp')
+                    if isinstance(timestamp, datetime):
+                        timestamp = timestamp.isoformat()
+                    elif timestamp is None:
+                        timestamp = datetime.now().isoformat()
+                    
+                    message_history.append({
+                        "source": msg.get('source', ''),
+                        "content": msg.get('content', ''),
+                        "timestamp": timestamp
+                    })
+                else:
+                    timestamp = msg.timestamp
+                    if isinstance(timestamp, datetime):
+                        timestamp = timestamp.isoformat()
+                    
+                    message_history.append({
+                        "source": msg.source,
+                        "content": msg.content,
+                        "timestamp": timestamp
+                    })
             
             obj = Users(
                 tg_id=user_dict.get('tg_id'),
                 message_history=message_history,
                 age=user_dict.get('age'),
-                full_name=user_dict.get('full_name'),
-                username=user_dict.get('username'),
-                email=user_dict.get('email'),
-                instagram_nick=user_dict.get('instagram_nick'),
-                client_project_info=user_dict.get('client_project_info'),
+                full_name=user_dict.get('full_name', ''),
+                username=user_dict.get('username', ''),
+                email=user_dict.get('email', ''),
+                instagram_nick=user_dict.get('instagram_nick', ''),
+                client_project_info=user_dict.get('client_project_info', ''),
                 lead_status=user_dict.get('lead_status', 'new'),
             )
             self.session.add(obj)
             return True
         except Exception as e:
-            self.logger.error(f"Ошибка при добавления пользователя: {e}")
+            self.logger.error(f"Ошибка при добавления пользователя: {e}", exc_info=True)
             return False
 
     async def get_user(self, tg_id: int) -> Optional[ClientModel]:
@@ -51,7 +67,7 @@ class UsersORM:
                 select(Users).where(Users.tg_id == tg_id)
             )
             user = result.scalar_one_or_none()
-            return to_client_model(user)
+            return await to_client_model(user)
         except Exception as e:
             self.logger.error(f"Ошибка при получении пользователя {tg_id}: {e}")
             return None
@@ -60,7 +76,12 @@ class UsersORM:
         try:
             result = await self.session.execute(select(Users))
             users = result.scalars().all()
-            return [to_client_model(u) for u in users if to_client_model(u)]
+            client_models = []
+            for u in users:
+                client_model = await to_client_model(u)
+                if client_model:
+                    client_models.append(client_model)
+            return client_models
         except Exception as e:
             self.logger.error(f"Ошибка при получении всех пользователей: {e}")
             return []
@@ -114,6 +135,7 @@ class UsersORM:
             )
             user = result.scalar_one_or_none()
             if not user:
+                self.logger.warning(f"Пользователь {tg_id} не найден")
                 return False
             
             message_data = {
@@ -126,9 +148,12 @@ class UsersORM:
                 user.message_history = []
             
             user.message_history.append(message_data)
+            
+            flag_modified(user, "message_history")
+            
             return True
         except Exception as e:
-            self.logger.error(f"Ошибка при добавлении сообщения в историю для {tg_id}: {e}")
+            self.logger.error(f"Ошибка при добавлении сообщения в историю для {tg_id}: {e}", exc_info=True)
             return False
 
     async def get_message_history(self, tg_id: int) -> List[ClientMessage]:
@@ -165,11 +190,16 @@ class UsersORM:
                 select(Users).where(Users.lead_status == status)
             )
             users = result.scalars().all()
-            return [to_client_model(u) for u in users if to_client_model(u)]
+            client_models = []
+            for u in users:
+                client_model = await to_client_model(u)
+                if client_model:
+                    client_models.append(client_model)
+            return client_models
         except Exception as e:
             self.logger.error(f"Ошибка при получении пользователей по статусу {status}: {e}")
             return []
 
     async def update_project_info(self, tg_id: int, project_info: str) -> bool:
+        """Обновляет информацию о проекте клиента"""
         return await self.update_user_fields(tg_id, client_project_info=project_info)
-

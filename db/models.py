@@ -1,6 +1,6 @@
 import logging
 from enum import StrEnum
-from typing import Annotated, Union, Optional, TypedDict
+from typing import Annotated, Optional, TypedDict
 
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import ForeignKey, Integer, JSON, String, UniqueConstraint, Enum
@@ -27,7 +27,7 @@ class Base(DeclarativeBase):
 
 class Users(Base):
     __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     tg_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=True)
     full_name: Mapped[strnullable]                                          # настоящее имя клиента
@@ -52,7 +52,7 @@ class Users(Base):
 class UserIdentifier(Base):
     __tablename__ = "user_identifiers"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE")
@@ -70,8 +70,9 @@ class UserIdentifier(Base):
     __table_args__ = (
         UniqueConstraint("type", "value", name="uq_identifier"),
     )
-    
-def to_client_model(user: Users | None) -> Optional[ClientModel]:
+
+
+async def to_client_model(user: Users | None) -> Optional[ClientModel]:
     """
     Конвертирует SQLAlchemy Users -> ClientModel
     """
@@ -90,15 +91,10 @@ def to_client_model(user: Users | None) -> Optional[ClientModel]:
             "lead_status": user.lead_status,
             "message_history": user.message_history or [],
         }
-        # восстановление полей (TODO)
+
         if user.identifiers:
-            for ident in user.identifiers:
-                if ident.type == IdentifierType.telegram and not data["tg_id"]:
-                    data["tg_id"] = int(ident.value)
-                elif ident.type == IdentifierType.email and not data["email"]:
-                    data["email"] = ident.value
-                elif ident.type == IdentifierType.instagram and not data["instagram_nick"]:
-                    data["instagram_nick"] = ident.value
+            for identifier in user.identifiers:
+                data[identifier.type.value] = identifier.value
 
         return ClientModel(**data)
 
