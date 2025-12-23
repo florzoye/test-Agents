@@ -1,16 +1,15 @@
-import aiohttp
+import datetime
 from typing import Optional
-
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
-from data.configs.tg_config import tg_settings
-
-from db.session import SQLAlchemyManager
 from db.crud import UsersORM
+from db.session import sqlalchemy_manager
+
+from data.configs.tg_config import tg_settings
 from src.models.client_model import ClientModel
 
-manager = SQLAlchemyManager()
+
 router = APIRouter()
 
 class TelegramUpdate(BaseModel):
@@ -23,32 +22,59 @@ class TelegramUpdate(BaseModel):
 @router.post("/tg_webhook")
 async def telegram_webhook(update: TelegramUpdate):
     """
-    POST endpoint для обработки входящих обновлений от Telegram
+    POST endpoint для обработки входящих обновлений от Telegram  
+
+    Пример структуры update:
+    {'message_id':, 'from': {'id': , 'is_bot': , 'first_name': '', 'username': '', 
+    'language_code': '', 'is_premium': }, 'chat': 
+    {'id': , 'first_name': '', 'username': '', 'type': ''}, 'date': , 'text': ''}
     """
     try:
         message = update.message or update.edited_message or update.channel_post
         if not message:
             return {"status": "ignored", "reason": "В сообщении нет данных"}
-        
-        manager.init()
+        sqlalchemy_manager.init()
         user_info = message.get("from", {})
 
         tg_id = user_info.get("id")
         username = user_info.get("username", "")
-        message_date = message.get("date")
+        message_date = datetime.datetime.fromtimestamp(message.get("date", datetime.datetime.now().timestamp()))
         context = message.get("text", "")
-
-        async with manager.get_session() as session:
-            users = UsersORM(session)
-            if await users.user_exists(tg_id)
-
+        try:
+            async with sqlalchemy_manager.get_session() as session:
+                users = UsersORM(session)
+                if await users.user_exists(tg_id):
+                    await users.add_message_to_history(
+                        tg_id=tg_id, source='user', 
+                        content=context, 
+                        timestamp=message_date
+                    )
+                else:
+                    client = ClientModel(
+                        tg_id=tg_id,
+                        full_name=username,
+                    )
+                    await users.add_user(
+                        user=client,
+                    )
+                    await users.add_message_to_history(
+                        tg_id=tg_id, source='user', 
+                        content=context, 
+                        timestamp=message_date
+                    )
+        except Exception as e:
+            print(f"❌ ОШИБКА БД: {str(e)}")
+            return {
+                "status": "error",
+                "reason": "Ошибка при работе с базой данных"
+                }
+        
         return {
             "status": "success",
-            "chat_id": chat_id,
-            "user": 'full_name',
-            "message_received": text,
-            "response_sent": True,
-            "telegram_api_result": 'send_result'
+            "tg_id": tg_id,
+            "username": username,
+            "message_date": message_date.isoformat(),
+            "context": context
         }
         
     except Exception as e:

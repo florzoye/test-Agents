@@ -9,7 +9,7 @@ class TelegramSender(MessageSender):
         recipient_id: str | None = None, 
         content: str | None = None
     ) -> bool:
-        tg_api_url = f"https://api.telegram.org/bot{tg_settings.bot_token}/sendMessage"
+        tg_api_url = f"https://api.telegram.org/bot{tg_settings.BOT_TOKEN}/sendMessage"
         payload = {
             "chat_id": recipient_id,
             "text": content,
@@ -24,19 +24,5 @@ class TelegramSender(MessageSender):
                     return True
                 else:
                     return False
-
-class InstagramSender(MessageSender):
-    async def send_message(
-        self, 
-        recipient_id: str | None = None, 
-        content: str | None = None
-    ) -> bool:
-       ...
-    
-class GmailSender(MessageSender):
-    async def send_message(
-        self, 
-        recipient_id: str | None = None, 
-        content: str | None = None
-    ) -> bool:
-       ...
+    async def check_delivery_status(self, message_id):
+        ...

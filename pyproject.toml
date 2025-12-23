@@ -17,4 +17,9 @@ dependencies = [
     "aiosqlite>=0.22.0",
     "sqlalchemy>=2.0.45",
     "asyncpg>=0.31.0",
+    "langgraph>=1.0.5",
+    "langchain-community>=0.4.1",
+    "aiogram>=3.23.0",
+    "gigachat>=0.1.43",
+    "langchain>=1.2.0",
 ]
