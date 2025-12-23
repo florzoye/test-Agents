@@ -4,6 +4,19 @@ from src.models.messages import ClientMessage
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
 class ClientModel(BaseModel):
+    """
+    Модель клиента
+
+    Args:
+        tg_id (Optional[int]): Telegram id
+        instagram_nick (Optional[str]): Ник в инстаграмме
+        email (Optional[EmailStr]): Почта клиента
+        full_name (Optional[str]): Полное имя клиента
+        age (Optional[int]): Возраст клиента в годах
+        client_project_info (Optional[str]): Минимальная информация о проекте клиента
+        lead_status (str): Статус лида: new, qualified, not_interested
+        message_history (List[ClientMessage]): История сообщений клиента
+    """
     tg_id: Optional[int] = Field(
         default=None,
         gt=0,
