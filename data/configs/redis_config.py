@@ -4,7 +4,7 @@ import ssl
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-import redis
+from redis.asyncio import Redis
 from celery import Celery
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -36,10 +36,11 @@ celery_app.conf.update(
 )
 
 
-redis_client = redis.Redis(
+redis_client = Redis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,
     db=0,
     password=settings.REDIS_PASSWORD
 )
+
 import src.app.queue.tasks
