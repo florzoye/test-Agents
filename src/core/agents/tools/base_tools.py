@@ -78,3 +78,15 @@ async def update_user_field(
         if not await users_orm.user_exists(tg_id):
             return False  # пользователь не найден
         return await users_orm.update_user_fields(tg_id, **valid_fields)
+
+@tool
+async def send_telegram_message():
+    ...
+
+base_tools = [
+    save_message, 
+    get_user_model, 
+    get_messages, 
+    update_user_field,
+    send_telegram_message
+]
