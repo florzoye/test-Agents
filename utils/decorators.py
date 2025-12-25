@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from functools import wraps
-from typing import TypeVar, Callable, Any
+from typing import TypeVar, Callable, Any, Coroutine
 
 
 T = TypeVar("T")
@@ -43,3 +43,14 @@ def retry_async(
         return wrapper
 
     return decorator
+
+def with_langfuse(func):
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        result = await func(self, *args, **kwargs)
+        
+        if hasattr(self, 'langfuse_handler'):
+            self.langfuse_handler.flush()
+        
+        return result
+    return wrapper
