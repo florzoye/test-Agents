@@ -6,9 +6,7 @@ load_dotenv(find_dotenv())
 
 class GigaChatConfig(BaseSettings):
     GIGACHAT_AUTH_KEY: str
-    TEMPERATURE: float
-    MAX_TOKENS: int
-    LLM_MODEL: str
+    GIGA_MODEL: str
     
     BASE_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     model_config = SettingsConfigDict(
