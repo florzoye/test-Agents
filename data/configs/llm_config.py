@@ -7,6 +7,7 @@ load_dotenv(find_dotenv())
 class BaseLLMConfig(BaseSettings):
     TEMPERATURE: float
     MAX_TOKENS: int
+    VERBOSE: bool
     TIMEOUT: int
     TOP_P: float
 
