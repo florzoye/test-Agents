@@ -1,6 +1,6 @@
 from typing import AsyncIterator
 from contextlib import asynccontextmanager
-from data.configs.db_config import db_config
+from data.configs.database_config import db_config
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 
