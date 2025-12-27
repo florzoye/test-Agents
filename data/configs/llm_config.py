@@ -4,17 +4,16 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
-class GigaChatConfig(BaseSettings):
-    GIGACHAT_AUTH_KEY: str
+class BaseLLMConfig(BaseSettings):
     TEMPERATURE: float
     MAX_TOKENS: int
-    LLM_MODEL: str
-    
+    TIMEOUT: int
+    TOP_P: float
+
     BASE_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     model_config = SettingsConfigDict(
         env_file=os.path.join(BASE_DIR, ".env"),
         env_file_encoding="utf-8",
     )
-    GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS" 
 
-giga_chat_config = GigaChatConfig()
+base_llm_config = BaseLLMConfig()
