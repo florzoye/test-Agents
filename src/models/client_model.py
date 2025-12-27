@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from src.models.messages import ClientMessage
 from pydantic import BaseModel, Field, EmailStr, field_validator
@@ -58,7 +58,7 @@ class ClientModel(BaseModel):
 
     # Business
     lead_status: str = Field(default="new", description="Статус лида: new, qualified, not_interested")
-    message_history: List[ClientMessage] = Field(default_factory=list, description="История сообщений клиента")
+    message_history: Union[List[ClientMessage], None] = Field(default_factory=list, description="История сообщений клиента")
 
     @field_validator("tg_id", mode="before")
     @classmethod
