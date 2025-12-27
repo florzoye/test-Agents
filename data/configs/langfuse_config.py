@@ -1,4 +1,5 @@
 import os
+from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -18,12 +19,28 @@ class LangFuseConfig(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-langfuse_config = LangFuseConfig()
-Langfuse(
-    public_key=langfuse_config.LANGFUSE_PUBLIC_KEY,
-    secret_key=langfuse_config.LANGFUSE_SECRET_KEY,
-    host=langfuse_config.LANGFUSE_BASE_URL,
-)
 
-langfuse = get_client()
-langfuse_handler = CallbackHandler()
+class LangfuseService:
+    def __init__(self):
+        self.client = None
+        self.handler = None
+
+    def init(self, config):
+        if self.client:
+            return
+
+        try:
+            Langfuse(
+                public_key=config.LANGFUSE_PUBLIC_KEY,
+                secret_key=config.LANGFUSE_SECRET_KEY,
+                host=config.LANGFUSE_BASE_URL,
+            )
+
+            self.client = get_client()
+            self.handler = CallbackHandler()
+            logger.info("Langfuse initialized")
+
+        except Exception:
+            logger.exception("Langfuse disabled")
+            self.client = None
+            self.handler = None
