@@ -1,7 +1,7 @@
 import json
 from langchain.messages import SystemMessage, HumanMessage, AIMessage
 
-from src.models.messages import ClientMessage, Source
+from src.models.messages import BaseMessage, Source
 from src.models.client_model import ClientModel
 
 
@@ -22,7 +22,7 @@ class DialogPromptTemplates:
     async def build_messages(
         cls,
         client: ClientModel,
-        message: ClientMessage,
+        message: BaseMessage,
         system_prompt: SystemMessage,
     ) -> list:
 

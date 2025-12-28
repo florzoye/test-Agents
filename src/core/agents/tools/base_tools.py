@@ -4,7 +4,7 @@ from langchain.tools import tool
 from db.crud import UsersORM
 from db.session import sqlalchemy_manager
 from src.models.client_model import ClientModel
-from src.models.messages import ClientMessage
+from src.models.messages import BaseMessage
 
 from src.app.queue.scheduler import schedule_message
 from data.configs.redis_config import redis_client
@@ -19,7 +19,7 @@ async def get_user_model(tg_id: int | str) -> ClientModel:
         return await users_orm.get_user(tg_id)
 
 @tool
-async def get_messages(tg_id: int | str) -> list[ClientMessage]:
+async def get_messages(tg_id: int | str) -> list[BaseMessage]:
     """Получает историю сообщений клиента по его tg_id"""
     async with sqlalchemy_manager.get_session() as session:
         users_orm = UsersORM(session)
@@ -61,7 +61,7 @@ async def update_user_field(
         age (Optional[int]): Возраст клиента в годах
         client_project_info (Optional[str]): Минимальная информация о проекте клиента
         lead_status (str): Статус лида: new, qualified, not_interested
-        message_history (List[ClientMessage]): История сообщений клиента
+        message_history (List[BaseMessage]): История сообщений клиента
     )
     
     :param tg_id: Telegram ID пользователя

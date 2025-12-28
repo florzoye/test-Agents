@@ -8,7 +8,7 @@ from src.core.agents.models.base import (
     Runnable,
     BaseAgent, 
 )
-from src.models.messages import ClientMessage
+from src.models.messages import BaseMessage
 from src.models.client_model import ClientModel
 from src.core.agents.prompts import DialogPromptTemplates
 
@@ -37,7 +37,7 @@ class DialogAgent:
     @retry_async(attempts=3)
     async def invoke(
         self,
-        user_message: ClientMessage,
+        user_message: BaseMessage,
         client_model: ClientModel,
         system_prompt: SystemMessage
     ):
