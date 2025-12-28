@@ -9,6 +9,13 @@ class Source(StrEnum):
 class ClientMessage(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
-    source: Source  
+    source: Source = Source.user  
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+class AgentMessage(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    source: Source = Source.agent  
     content: str
     timestamp: datetime = Field(default_factory=datetime.now)
