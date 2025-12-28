@@ -1,6 +1,6 @@
 from typing import Optional, List, Union
 
-from src.models.messages import ClientMessage
+from src.models.messages import BaseMessage
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
 class ClientModel(BaseModel):
@@ -15,7 +15,7 @@ class ClientModel(BaseModel):
         age (Optional[int]): Возраст клиента в годах
         client_project_info (Optional[str]): Минимальная информация о проекте клиента
         lead_status (str): Статус лида: new, qualified, not_interested
-        message_history (List[ClientMessage]): История сообщений клиента
+        message_history (List[BaseMessage]): История сообщений клиента
     """
     tg_id: Optional[int] = Field(
         default=None,
@@ -58,7 +58,7 @@ class ClientModel(BaseModel):
 
     # Business
     lead_status: str = Field(default="new", description="Статус лида: new, qualified, not_interested")
-    message_history: Union[List[ClientMessage], None] = Field(default_factory=list, description="История сообщений клиента")
+    message_history: Union[List[BaseMessage], None] = Field(default_factory=list, description="История сообщений клиента")
 
     @field_validator("tg_id", mode="before")
     @classmethod
@@ -75,8 +75,33 @@ class ClientModel(BaseModel):
         return " ".join(v.strip().split())
 
 
-    async def add_message(self, msg: ClientMessage):
+    async def add_message(self, msg: BaseMessage):
         self.message_history.append(msg)
 
 
+def to_client_model(user: Union[dict, object, None]) -> Optional[ClientModel]:
+    """
+    Конвертирует dict или SQLAlchemy объект в ClientModel
+    
+    Args:
+        user: dict из SQLite или SQLAlchemy ORM объект или None
+        
+    Returns:
+        ClientModel или None
+    """
+    if not user:
+        return None
 
+    try:
+        if isinstance(user, dict):
+            data = user.copy()
+        else:
+            data = {k: v for k, v in user.__dict__.items() if not k.startswith("_")}
+
+        if data.get("track_addresses") is None:
+            data["track_addresses"] = []
+
+        return ClientModel(**data)
+        
+    except Exception:
+        return None
