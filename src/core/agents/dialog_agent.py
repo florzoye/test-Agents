@@ -42,7 +42,7 @@ class DialogAgent:
         system_prompt: SystemMessage
     ):
         if self.agent is None:
-            raise RuntimeError("Agent not initialized")
+            raise RuntimeError("Agent not initialized, init() first!")
 
         try:
             messages = await DialogPromptTemplates.build_messages(

@@ -3,12 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
-from db.crud import UsersORM
-from db.session import sqlalchemy_manager
-
 from data.configs.tg_config import tg_settings
-from src.models.client_model import ClientModel
-
 
 router = APIRouter()
 
@@ -33,42 +28,13 @@ async def telegram_webhook(update: TelegramUpdate):
         message = update.message or update.edited_message or update.channel_post
         if not message:
             return {"status": "ignored", "reason": "В сообщении нет данных"}
-        sqlalchemy_manager.init()
         user_info = message.get("from", {})
 
         tg_id = user_info.get("id")
         username = user_info.get("username", "")
         message_date = datetime.datetime.fromtimestamp(message.get("date", datetime.datetime.now().timestamp()))
         context = message.get("text", "")
-        try:
-            async with sqlalchemy_manager.get_session() as session:
-                users = UsersORM(session)
-                if await users.user_exists(tg_id):
-                    await users.add_message_to_history(
-                        tg_id=tg_id, source='user', 
-                        content=context, 
-                        timestamp=message_date
-                    )
-                else:
-                    client = ClientModel(
-                        tg_id=tg_id,
-                        full_name=username,
-                    )
-                    await users.add_user(
-                        user=client,
-                    )
-                    await users.add_message_to_history(
-                        tg_id=tg_id, source='user', 
-                        content=context, 
-                        timestamp=message_date
-                    )
-        except Exception as e:
-            print(f"❌ ОШИБКА БД: {str(e)}")
-            return {
-                "status": "error",
-                "reason": "Ошибка при работе с базой данных"
-                }
-        
+       
         return {
             "status": "success",
             "tg_id": tg_id,

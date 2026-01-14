@@ -72,5 +72,3 @@ class ClientBase(ABC):
     async def delete_all_tables(self) -> bool:
         """Удалить все таблицы"""
         ...
-
- 

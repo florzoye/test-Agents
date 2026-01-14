@@ -36,7 +36,7 @@ class Database:
                 session
             )
 
-            db_url = db_config.url()
+            db_url = db_config.url
             safe_url = db_url.split('@')[1] if '@' in db_url else db_url
             self.logger.info(f"✅ PostgreSQL подключена: {safe_url}")
     

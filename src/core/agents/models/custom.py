@@ -1,19 +1,11 @@
-from langchain_ollama import ChatOllama
-from langchain.agents import create_agent
-from langchain_community.llms.gigachat import GigaChat
-
-from src.core.agents.models.base import (
-    BaseLLM, 
-    BaseTool, 
-    Runnable,
-    BaseAgent, 
-    BaseLanguageModel, 
-)
-
+from src.core.agents.models.base import BaseLLM
 from data.configs.llm_config import base_llm_config
 from data.configs.ollama_config import ollama_config
 from data.configs.gigachat_config import giga_chat_config
 
+from langchain_ollama import ChatOllama
+from langchain_community.llms.gigachat import GigaChat
+from langchain_classic.base_language import BaseLanguageModel
 
 class GetGigaChat(BaseLLM):
     async def get_llm(self):
@@ -41,16 +33,3 @@ class GetOllamaLLM(BaseLLM):
         )
     
 
-class CreateAgent(BaseAgent):
-    async def lc_create_agent(
-        self,
-        llm: BaseLLM,
-        tools: list[BaseTool]
-    ) -> Runnable:
-        llm_instance = await llm.get_llm()
-        agent = create_agent(
-            model=llm_instance,
-            tools=tools,
-        )
-
-        return agent

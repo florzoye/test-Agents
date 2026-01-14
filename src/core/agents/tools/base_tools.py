@@ -1,34 +1,31 @@
 from typing import Any
 from langchain.tools import tool
 
-from db.crud import UsersORM
-from db.session import sqlalchemy_manager
-from src.models.client_model import ClientModel
+from db.database import Database
 from src.models.messages import BaseMessage
+from db.database_protocol import ClientBase
+from src.models.client_model import ClientModel
 
 from src.app.queue.scheduler import schedule_message
 from data.configs.redis_config import redis_client
 
 @tool
-async def get_user_model(tg_id: int | str) -> ClientModel:
+async def get_user_model(db: Database | ClientBase, tg_id: int | str) -> ClientModel:
     """Получает модель клиента по его tg_id"""
-    async with sqlalchemy_manager.get_session() as session:
-        users_orm = UsersORM(session)
-        if await users_orm.user_exists(tg_id) is False:
-            return 'Пользователь не найден, возможно он новый. Проведи разведывочную беседу.'
-        return await users_orm.get_user(tg_id)
+    if await db.client_exists(tg_id) is False:
+        return 'Пользователь не найден, возможно он новый. Проведи разведывочную беседу.'
+    return await db.client_exists(tg_id)
 
 @tool
-async def get_messages(tg_id: int | str) -> list[BaseMessage]:
+async def get_messages(db: Database | ClientBase, tg_id: int | str) -> list[BaseMessage]:
     """Получает историю сообщений клиента по его tg_id"""
-    async with sqlalchemy_manager.get_session() as session:
-        users_orm = UsersORM(session)
-        if await users_orm.user_exists(tg_id) is False:
-            return []
-        return await users_orm.get_message_history(tg_id)
+    if await db.client_exists(tg_id) is False:
+        return []
+    return await db.get_message_history(tg_id)
 
 @tool
 async def save_message(
+    db: Database | ClientBase,
     tg_id: int | str,
     source: str,
     message: str
@@ -40,14 +37,13 @@ async def save_message(
     :param source: Источник сообщения (строго, "user" или "bot")
     :param message: Текст сообщения
     """
-    async with sqlalchemy_manager.get_session() as session:
-        users_orm = UsersORM(session)
-        if await users_orm.user_exists(tg_id) is False:
-            return False
-        return await users_orm.add_message_to_history(tg_id, source, message)
+    if await db.client_exists(tg_id) is False:
+        return False
+    return await db.update_message_history(tg_id, source, message)
 
 @tool
 async def update_user_field(
+    db: Database | ClientBase,
     tg_id: int | str,
     **fields: Any
 ) -> bool:
@@ -73,11 +69,9 @@ async def update_user_field(
     if not valid_fields:
         return False  
 
-    async with sqlalchemy_manager.get_session() as session:
-        users_orm = UsersORM(session)
-        if not await users_orm.user_exists(tg_id):
-            return False  # пользователь не найден
-        return await users_orm.update_user_fields(tg_id, **valid_fields)
+    if not await db.client_exists(tg_id):
+        return False  
+    return await db.update_client_fields(tg_id, **valid_fields)
 
 @tool
 async def send_telegram_message():

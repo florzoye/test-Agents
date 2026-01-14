@@ -1,5 +1,4 @@
 from typing import Optional, List, Union
-
 from src.models.messages import BaseMessage
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
