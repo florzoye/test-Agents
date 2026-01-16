@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
 class Source(StrEnum):
-    user = 'user'
+    client = 'client'
     agent = 'agent'
 
 class BaseMessage(BaseModel):

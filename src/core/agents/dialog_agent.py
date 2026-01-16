@@ -29,11 +29,11 @@ class DialogAgent:
         self.agent: Runnable | None = None
 
     async def init(self):
-        self.agent = await self._agent_factory.lc_create_agent(
+        self.agent = self._agent_factory.lc_create_agent(
             llm=self._llm,
             tools=self._tools,
         )
-    
+        
     @retry_async(attempts=3)
     async def invoke(
         self,

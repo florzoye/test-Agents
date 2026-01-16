@@ -25,7 +25,7 @@ class ClientModel(BaseModel):
     instagram_nick: Optional[str] = Field(
         default=None,
         min_length=1,
-        max_length=30,
+        max_length=100,
         description="Ник в инстаграмме"
     )
 
@@ -44,7 +44,7 @@ class ClientModel(BaseModel):
     age: Optional[int] = Field(
         default=None,
         gt=0,
-        lt=120,
+        lt=100,
         description="Возраст клиента в годах"
     )
 

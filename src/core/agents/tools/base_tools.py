@@ -15,7 +15,7 @@ ALLOWED_UPDATE_FIELDS = {
     "lead_status"
 }
 
-@tool
+@tool(parse_docstring=True)
 async def get_client_model(
     db: Database | ClientBase,
     tg_id: int | str
@@ -45,7 +45,7 @@ async def get_client_model(
         ensure_ascii=False
     )
 
-@tool
+@tool(parse_docstring=True)
 async def get_messages(
     db: Database | ClientBase,
     tg_id: int | str
@@ -72,7 +72,7 @@ async def get_messages(
         ensure_ascii=False
     )
 
-@tool
+@tool(parse_docstring=True)
 async def save_message(
     db: Database | ClientBase,
     tg_id: int | str,
@@ -101,7 +101,7 @@ async def save_message(
 
     return await db.update_message_history(tg_id, source, message)
 
-@tool
+@tool(parse_docstring=True)
 async def update_client_field(
     db: Database | ClientBase,
     tg_id: int | str,
@@ -159,7 +159,7 @@ async def update_client_field(
 
     return await db.update_client_fields(tg_id, **valid_fields)
 
-@tool
+@tool(parse_docstring=True)
 async def update_client_lead(
     db: Database | ClientBase,
     tg_id: int | str,
@@ -185,7 +185,7 @@ async def update_client_lead(
         tg_id=tg_id, new_status=lead_status
     )
 
-@tool
+@tool(parse_docstring=True)
 async def send_telegram_message(
     tg_id: int, 
     message: str, 
@@ -216,7 +216,7 @@ async def send_telegram_message(
         )
     )
 
-@tool
+@tool(parse_docstring=True)
 async def cancel_last_scheduler_message(tg_id: int) -> bool:
     """Отменяет последнее запланированное сообщение для клиента.
     
