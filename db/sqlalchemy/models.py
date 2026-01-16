@@ -21,5 +21,5 @@ class Users(Base):
     email: Mapped[strnullable] 
     full_name: Mapped[strnullable] 
     client_project_info: Mapped[strnullable] 
-    lead_status: Mapped[String] 
+    lead_status: Mapped[strnullable] 
     track_addresses: Mapped[list[BaseMessage]] = mapped_column(MutableList.as_mutable(JSON), default=[])
