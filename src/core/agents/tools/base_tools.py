@@ -189,30 +189,30 @@ async def update_client_lead(
 async def send_telegram_message(
     tg_id: int, 
     message: str, 
-    delay_seconds: Optional[int] = None
+    delay_min: Optional[int] = None
 ) -> bool:
     """Отправляет сообщение клиенту в Telegram с задержкой или без.
     
     Args:
         tg_id: Telegram ID клиента
         message: Текст сообщения для клиента
-        delay_seconds: Задержка отправки в секундах. Если None, отправляется сразу (опционально)
+        delay_min: Задержка отправки в секундах. Если None, отправляется сразу (опционально)
         
     Returns:
         True если сообщение запланировано успешно, False в противном случае
         
     Examples:
-        Отправить сразу: send_telegram_message(123, "Привет")
-        Отправить через 5 часов: send_telegram_message(123, "Готовы?", 18000)
+        -Отправить сразу: send_telegram_message(123, "Привет") \n
+        -Отправить через 5 часов: send_telegram_message(123, "Готовы?", 18000)
     """
-    if delay_seconds is None:
-        delay_seconds = 1
+    if delay_min is None:
+        delay_min = 1
         
     return bool(
         schedule_tg_message(
             tg_id=tg_id,
             message=message,
-            delay_seconds=delay_seconds
+            delay_min=delay_min
         )
     )
 

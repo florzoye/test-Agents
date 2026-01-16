@@ -4,12 +4,12 @@ from data.configs.redis_config import redis_client
 def schedule_tg_message(
     tg_id: int,
     message: str,
-    delay_seconds: int | None = 1
+    delay_min: int | None = 1
 ) -> bool:
     try:
         user_key = f"tg:scheduled:{tg_id}"
         old_task_id = redis_client.get(user_key)
-        delay = delay_seconds or 0
+        _delay = delay_min or 0
 
         if old_task_id:
             cancel_scheduled_message.delay(old_task_id.decode())
@@ -17,18 +17,18 @@ def schedule_tg_message(
 
         result = send_tg_message_for_client.apply_async(
             args=[tg_id, message],
-            countdown=delay
+            countdown=_delay
         )
 
         redis_client.setex(
             user_key,
-            delay + 60,
+            _delay + 60,
             result.id
         )
 
         redis_client.setex(
             f"tg:task:{result.id}",
-            delay + 60,
+            _delay + 60,
             "active"
         )
 
