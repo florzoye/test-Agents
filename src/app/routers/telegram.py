@@ -3,7 +3,9 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
+from src.models.messages import BaseMessage, Source
 from data.configs.tg_config import tg_settings
+from src.app.telegram_queue import telegram_event_queue
 
 router = APIRouter()
 
@@ -33,15 +35,17 @@ async def telegram_webhook(update: TelegramUpdate):
         tg_id = user_info.get("id")
         username = user_info.get("username", "")
         message_date = datetime.datetime.fromtimestamp(message.get("date", datetime.datetime.now().timestamp()))
-        context = message.get("text", "")
-       
-        return {
-            "status": "success",
-            "tg_id": tg_id,
-            "username": username,
-            "message_date": message_date.isoformat(),
-            "context": context
-        }
+        content = message.get("text", "")
+
+        item = BaseMessage(
+            timestamp=message_date,
+            source=Source.client,
+            content=content,
+            tg_id=tg_id
+        )
+
+        await telegram_event_queue.put(item)
+        return {'status': 'ok'}
         
     except Exception as e:
         print(f"❌ КРИТИЧЕСКАЯ ОШИБКА: {str(e)}")
