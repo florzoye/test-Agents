@@ -21,8 +21,8 @@ async def telegram_webhook(update: TelegramUpdate):
 
     Пример структуры update:
     {'message_id':, 'from': {'id': , 'is_bot': , 'first_name': '', 'username': '', 
-    'language_code': '', 'is_premium': }, 'chat': 
-    {'id': , 'first_name': '', 'username': '', 'type': ''}, 'date': , 'text': ''}
+    'language_code': '', 'is_premium': }, 
+    'chat': {'id': , 'first_name': '', 'username': '', 'type': ''}, 'date': , 'text': ''}
     """
     try:
         message = update.message or update.edited_message or update.channel_post

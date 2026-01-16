@@ -1,14 +1,50 @@
-from src.app.queue.tasks import send_message_for_client, cancel_scheduled_message
+from src.app.queue.tasks import send_tg_message_for_client, cancel_scheduled_message
 from data.configs.redis_config import redis_client
 
-def schedule_message(client_id: int, message: str, delay_seconds: int) -> str:
-    result = send_message_for_client.apply_async(
-        args=[client_id, message],
-        countdown=delay_seconds
-    )
-    redis_client.setex(f"tg:task:{result.id}", delay_seconds + 300, "active")
-    return result.id
+def schedule_tg_message(
+    tg_id: int,
+    message: str,
+    delay_seconds: int | None = 1
+) -> bool:
+    try:
+        user_key = f"tg:scheduled:{tg_id}"
+        old_task_id = redis_client.get(user_key)
+        delay = delay_seconds or 0
 
-def cancel_message(task_id: str) -> bool:
-    cancel_scheduled_message.delay(task_id)
+        if old_task_id:
+            cancel_scheduled_message.delay(old_task_id.decode())
+            redis_client.delete(user_key)
+
+        result = send_tg_message_for_client.apply_async(
+            args=[tg_id, message],
+            countdown=delay
+        )
+
+        redis_client.setex(
+            user_key,
+            delay + 60,
+            result.id
+        )
+
+        redis_client.setex(
+            f"tg:task:{result.id}",
+            delay + 60,
+            "active"
+        )
+
+        return True
+
+    except Exception:
+        return False
+
+
+def cancel_message(tg_id: int) -> bool:
+    user_key = f"tg:scheduled:{tg_id}"
+    task_id = redis_client.get(user_key)
+
+    if not task_id:
+        return False
+
+    cancel_scheduled_message.delay(task_id.decode())
+    redis_client.delete(user_key)
     return True

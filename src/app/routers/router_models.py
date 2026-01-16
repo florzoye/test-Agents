@@ -1,9 +1,11 @@
 import aiohttp
-from enum import StrEnum
+from enum import Enum
 from data.configs.tg_config import tg_settings
 from src.models.base.message_sender import MessageSender
 
-class TelegramParseMode(StrEnum):
+TG_API_URL = f"https://api.telegram.org/bot{tg_settings.BOT_TOKEN}/sendMessage"
+
+class TelegramParseMode(Enum):
     HTML = "HTML"
     MARKDOWN = "Markdown"
     MARKDOWN_V2 = "MarkdownV2"
@@ -13,23 +15,22 @@ class TelegramSender(MessageSender):
     async def send_message(
         self,
         content: str | None = None,
-        recipient_id: str | None = None, 
-        parse_mode: TelegramParseMode = TelegramParseMode.NONE,
+        chat_id: str | None = None, 
+        parse_mode: TelegramParseMode | None = TelegramParseMode.MARKDOWN,
     ) -> bool:
-        tg_api_url = f"https://api.telegram.org/bot{tg_settings.BOT_TOKEN}/sendMessage"
         payload = {
-            "chat_id": recipient_id,
+            "chat_id": chat_id,
             "text": content,
             'parse_mode': parse_mode
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                tg_api_url, 
+                TG_API_URL, 
                 json=payload
             ) as response:
                 if response.status == 200:
                     return True
                 else:
                     return False
-    async def check_delivery_status(self, message_id):
-        ...
+                
+    async def check_delivery_status(self, message_id): ...
