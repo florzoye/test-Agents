@@ -1,27 +1,76 @@
-from typing import Any
+import json
+from typing import Any, Optional
 from langchain.tools import tool
 
 from db.database import Database
-from src.models.messages import BaseMessage
 from db.database_protocol import ClientBase
-from src.models.client_model import ClientModel
+from src.app.queue.scheduler import schedule_tg_message, cancel_message
 
-from src.app.queue.scheduler import schedule_message
-from data.configs.redis_config import redis_client
+ALLOWED_UPDATE_FIELDS = {
+    "instagram_nick",
+    "email",
+    "full_name",
+    "age",
+    "client_project_info",
+    "lead_status"
+}
 
 @tool
-async def get_user_model(db: Database | ClientBase, tg_id: int | str) -> ClientModel:
-    """Получает модель клиента по его tg_id"""
-    if await db.client_exists(tg_id) is False:
-        return 'Пользователь не найден, возможно он новый. Проведи разведывочную беседу.'
-    return await db.client_exists(tg_id)
+async def get_client_model(
+    db: Database | ClientBase,
+    tg_id: int | str
+) -> Optional[str]:
+    """Получает модель клиента по его tg_id и возвращает JSON-строку.
+    
+    Args:
+        db: Database или ClientBase объект для работы с БД
+        tg_id: Telegram ID клиента
+        
+    Returns:
+        JSON-строка с данными клиента или None если клиент не найден
+    """
+    if isinstance(db, Database):
+        db = db.get()
+
+    if not await db.client_exists(tg_id):
+        return None
+
+    client = await db.get_client(tg_id)
+
+    return json.dumps(
+        client.model_dump(
+            exclude_none=True,
+            exclude={"message_history"}
+        ),
+        ensure_ascii=False
+    )
 
 @tool
-async def get_messages(db: Database | ClientBase, tg_id: int | str) -> list[BaseMessage]:
-    """Получает историю сообщений клиента по его tg_id"""
-    if await db.client_exists(tg_id) is False:
-        return []
-    return await db.get_message_history(tg_id)
+async def get_messages(
+    db: Database | ClientBase,
+    tg_id: int | str
+) -> str:
+    """Получает историю сообщений клиента по его tg_id.
+    
+    Args:
+        db: Database или ClientBase объект для работы с БД
+        tg_id: Telegram ID клиента
+        
+    Returns:
+        JSON-строка с историей сообщений
+    """
+    if isinstance(db, Database):
+        db = db.get()
+
+    if not await db.client_exists(tg_id):
+        return "[]"
+
+    messages = await db.get_message_history(tg_id)
+
+    return json.dumps(
+        [m.model_dump() for m in messages],
+        ensure_ascii=False
+    )
 
 @tool
 async def save_message(
@@ -30,57 +79,170 @@ async def save_message(
     source: str,
     message: str
 ) -> bool:
+    """Сохраняет сообщение пользователя в историю.
+    
+    Args:
+        db: Database или ClientBase объект для работы с БД
+        tg_id: Telegram ID клиента
+        source: Источник сообщения, должен быть 'client' или 'bot'
+        message: Текст сообщения
+        
+    Returns:
+        True если сообщение сохранено успешно, False в противном случае
     """
-    Сохраняет сообщение пользователя по его tg_id
-
-    :param tg_id: Идентификатор пользователя в Telegram
-    :param source: Источник сообщения (строго, "user" или "bot")
-    :param message: Текст сообщения
-    """
-    if await db.client_exists(tg_id) is False:
+    if source not in {"client", "bot"}:
         return False
+
+    if isinstance(db, Database):
+        db = db.get()
+
+    if not await db.client_exists(tg_id):
+        return False
+
     return await db.update_message_history(tg_id, source, message)
 
 @tool
-async def update_user_field(
+async def update_client_field(
     db: Database | ClientBase,
     tg_id: int | str,
-    **fields: Any
+    instagram_nick: Optional[str] = None,
+    email: Optional[str] = None,
+    full_name: Optional[str] = None,
+    age: Optional[int] = None,
+    client_project_info: Optional[str] = None,
+    lead_status: Optional[str] = None
 ) -> bool:
-    """
-    Обновляет поле/поля пользователя по его tg_id, можно передовать несколько полей одним вызовом, 
-    но только, те поля, которые есть в модели ClientModel (\n
-        tg_id (Optional[int]): Telegram id 
-        instagram_nick (Optional[str]): Ник в инстаграмме
-        email (Optional[EmailStr]): Почта клиента
-        full_name (Optional[str]): Полное имя клиента
-        age (Optional[int]): Возраст клиента в годах
-        client_project_info (Optional[str]): Минимальная информация о проекте клиента
-        lead_status (str): Статус лида: new, qualified, not_interested
-        message_history (List[BaseMessage]): История сообщений клиента
-    )
+    """Обновляет одно или несколько полей клиента.
     
-    :param tg_id: Telegram ID пользователя
-    :param fields: поля для обновления, например:
-        full_name="Иван Иванов", email="ivan@example.com"
-    :return: True если обновление прошло успешно, False если ошибка или пользователь не найден
+    Args:
+        db: Database или ClientBase объект для работы с БД
+        tg_id: Telegram ID клиента
+        instagram_nick: Ник в Instagram (опционально)
+        email: Email клиента (опционально)
+        full_name: Полное имя клиента (опционально)
+        age: Возраст клиента в годах (опционально)
+        client_project_info: Информация о проекте клиента (опционально)
+        lead_status: Статус лида - new, qualified или not_interested (опционально)
+        
+    Returns:
+        True если обновление прошло успешно, False в противном случае
     """
-    valid_fields = {k: v for k, v in fields.items() if k in ClientModel.model_fields}
+    if isinstance(db, Database):
+        db = db.get()
+
+    # Собираем только те поля, которые переданы
+    fields = {}
+    if instagram_nick is not None:
+        fields['instagram_nick'] = instagram_nick
+    if email is not None:
+        fields['email'] = email
+    if full_name is not None:
+        fields['full_name'] = full_name
+    if age is not None:
+        fields['age'] = age
+    if client_project_info is not None:
+        fields['client_project_info'] = client_project_info
+    if lead_status is not None:
+        fields['lead_status'] = lead_status
+
+    # Фильтруем только разрешённые поля
+    valid_fields = {
+        k: v for k, v in fields.items()
+        if k in ALLOWED_UPDATE_FIELDS
+    }
+
     if not valid_fields:
-        return False  
+        return False
 
     if not await db.client_exists(tg_id):
-        return False  
+        return False
+
     return await db.update_client_fields(tg_id, **valid_fields)
 
 @tool
-async def send_telegram_message():
-    ...
+async def update_client_lead(
+    db: Database | ClientBase,
+    tg_id: int | str,
+    lead_status: str
+) -> bool:
+    """Обновляет статус лида клиента.
+    
+    Args:
+        db: Database или ClientBase объект для работы с БД
+        tg_id: Telegram ID клиента
+        lead_status: Новый статус лида - new, qualified или not_interested
+        
+    Returns:
+        True если обновление прошло успешно, False в противном случае
+    """
+    if isinstance(db, Database):
+        db = db.get()
 
-base_tools = [
-    save_message, 
-    get_user_model, 
+    if not await db.client_exists(tg_id):
+        return False
+    
+    return await db.update_lead_status(
+        tg_id=tg_id, new_status=lead_status
+    )
+
+@tool
+async def send_telegram_message(
+    tg_id: int, 
+    message: str, 
+    delay_seconds: Optional[int] = None
+) -> bool:
+    """Отправляет сообщение клиенту в Telegram с задержкой или без.
+    
+    Args:
+        tg_id: Telegram ID клиента
+        message: Текст сообщения для клиента
+        delay_seconds: Задержка отправки в секундах. Если None, отправляется сразу (опционально)
+        
+    Returns:
+        True если сообщение запланировано успешно, False в противном случае
+        
+    Examples:
+        Отправить сразу: send_telegram_message(123, "Привет")
+        Отправить через 5 часов: send_telegram_message(123, "Готовы?", 18000)
+    """
+    if delay_seconds is None:
+        delay_seconds = 1
+        
+    return bool(
+        schedule_tg_message(
+            tg_id=tg_id,
+            message=message,
+            delay_seconds=delay_seconds
+        )
+    )
+
+@tool
+async def cancel_last_scheduler_message(tg_id: int) -> bool:
+    """Отменяет последнее запланированное сообщение для клиента.
+    
+    Args:
+        tg_id: Telegram ID клиента
+        
+    Returns:
+        True если сообщение отменено успешно, False в противном случае
+    """
+    return bool(
+        cancel_message(
+            tg_id=tg_id
+        )
+    )
+
+db_tools = [
     get_messages, 
-    update_user_field,
-    send_telegram_message
+    save_message, 
+    get_client_model, 
+    update_client_field,
+    update_client_lead
 ]
+
+tg_tools = [
+    send_telegram_message,
+    cancel_last_scheduler_message
+]
+
+dialog_tools = [*tg_tools, *db_tools]
