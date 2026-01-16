@@ -9,7 +9,7 @@ class Source(StrEnum):
 class BaseMessage(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
-    source: Source
     content: str
+    source: Source
+    tg_id: str | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
-
