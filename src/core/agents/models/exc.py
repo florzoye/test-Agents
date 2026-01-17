@@ -26,7 +26,6 @@ class AgentExecutionException(AgentException):
     def __init__(self, agent: AgentEnum, exp: Exception, message: str = "Ошибка при выполнении execute"):
         super().__init__(message=message, agent=agent,exp=exp)
 
-
 class LLMException(AgentException):
     def __init__(self, agent: AgentEnum, exp: Exception, message: str):
         super().__init__(message=message, agent=agent,exp=exp)

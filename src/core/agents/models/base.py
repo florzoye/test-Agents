@@ -23,7 +23,6 @@ class BaseAgent(ABC):
         self,
         user_message: BaseMessage,
         client_model: ClientModel,
-        system_prompt: SystemMessage
     ):
         ...
 
