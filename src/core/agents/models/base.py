@@ -1,4 +1,3 @@
-from enum import StrEnum
 from abc import ABC, abstractmethod
 
 from langchain.agents import create_agent
@@ -23,7 +22,7 @@ class BaseAgent(ABC):
         self,
         user_message: BaseMessage,
         client_model: ClientModel,
-    ):
+    ) -> BaseMessage:
         ...
 
 class CreateAgent:
