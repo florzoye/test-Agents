@@ -1,19 +1,16 @@
-from loguru import logger
+from typing import List
 from langchain.tools import BaseTool
-from langchain.messages import SystemMessage
+from langchain.messages import SystemMessage, AIMessage
 
-from src.core.agents.models.base import (
-    BaseLLM, 
-    BaseTool, 
-    Runnable,
-    BaseAgent, 
-    CreateAgent
-)
 from utils.decorators import retry_async
-from src.models.messages import BaseMessage
 from src.models.client_model import ClientModel
-from data.configs.base_config import base_config
+from src.core.agents.models.exc import AgentEnum
+from src.models.messages import BaseMessage, Source
 from src.core.agents.prompts import SummaryPromptTemplates
+from src.core.agents.models.base import BaseLLM, BaseTool, Runnable, BaseAgent, CreateAgent 
+from src.core.agents.models.exc import AgentExecutionException, AgentInitializationException, LLMException
+
+from data.configs.base_config import base_config
 from data.configs.callbacks_config import CALLBACK_SERVICE
 
 class SummaryAgent(BaseAgent):
@@ -29,6 +26,7 @@ class SummaryAgent(BaseAgent):
         self, 
         llm: BaseLLM,
         tools: list[BaseTool],
+        *,
         system_prompt: SystemMessage
     ):
         if self._initialized:
@@ -36,16 +34,21 @@ class SummaryAgent(BaseAgent):
         
         self._llm = llm
         self._tools = tools
+        self.system_prompt = system_prompt
         self.agent: Runnable | None = None
+
         self._ensure_agent()
         self._initialized = True
     
-    def _ensure_agent(self) -> 'SummaryAgent':
-        if self.agent is None:
-            self.agent = CreateAgent.lc_create_agent(
-                llm=self._llm,
-                tools=self._tools
-            ) 
+    def _ensure_agent(self) -> None:
+        try:
+            if self.agent is None:
+                self.agent = CreateAgent.lc_create_agent(
+                    llm=self._llm,
+                    tools=self._tools
+                )
+        except Exception as exp:
+            raise AgentInitializationException(agent=AgentEnum.SUMMARY, exp=exp) 
         
     @retry_async(
         attempts=base_config.ATTEMPS_FOR_RETRY,
@@ -53,8 +56,38 @@ class SummaryAgent(BaseAgent):
         delay=base_config.DELAY
     )
     async def execute(
-        self,
-        user_message: BaseMessage,
-        client_model: ClientModel,
-    ):
-        pass
+        self, 
+        client_model: ClientModel, 
+        user_message: BaseMessage, 
+    ) -> BaseMessage:
+        try:
+            messages = await SummaryPromptTemplates.build_message(
+                client=client_model,
+                message=user_message,
+                system_prompt=self.system_prompt
+            )
+            try:
+                result_raw: dict = await self.agent.ainvoke(
+                    {"messages": messages},
+                    config={"callbacks": CALLBACK_SERVICE.callbacks},
+                )
+
+                ai_messages: List[AIMessage] = [
+                    msg for msg in result_raw.get("messages", [])
+                    if isinstance(msg, AIMessage)
+                ]
+                
+                content: str = "Контент не получен, пропусти данное сообщение"
+                if ai_messages:
+                    content = ai_messages[-1].content
+
+                return BaseMessage(
+                    content=content, 
+                    source=Source.agent, 
+                    tg_id=client_model.tg_id
+                )
+            
+            except Exception as exp:
+                raise AgentExecutionException(agent=AgentEnum.SUMMARY, exp=exp)
+        except Exception as exp:
+            raise LLMException(agent=AgentEnum.SUMMARY, exp=exp)
