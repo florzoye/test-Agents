@@ -1,8 +1,14 @@
+from enum import StrEnum
 from abc import ABC, abstractmethod
+
 from langchain.agents import create_agent
+from langchain.messages import SystemMessage
 from langchain_classic.tools import BaseTool 
 from langchain_core.runnables import Runnable
 from langchain_core.language_models import BaseLanguageModel 
+
+from src.models.messages import BaseMessage
+from src.models.client_model import ClientModel
 
 class BaseLLM(ABC):
     @abstractmethod
@@ -10,13 +16,19 @@ class BaseLLM(ABC):
 
 class BaseAgent(ABC):
     @abstractmethod
-    def lc_create_agent(
-        self,
-        llm: BaseLLM,
-        tools: list[BaseTool]
-    ) -> Runnable: ...
+    def _ensure_agent(self) -> None: ...
 
-class CreateAgent(BaseAgent):
+    @abstractmethod
+    async def execute(
+        self,
+        user_message: BaseMessage,
+        client_model: ClientModel,
+        system_prompt: SystemMessage
+    ):
+        ...
+
+class CreateAgent:
+    @classmethod
     def lc_create_agent(
         self,
         llm: BaseLLM,
