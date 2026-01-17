@@ -13,7 +13,7 @@ class MultiAgentChain:
     _instance = None
     _initialized = False
 
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -22,14 +22,9 @@ class MultiAgentChain:
         if self._initialized:
             return
 
-
-    
     async def waiting_new_message(self, state: State):
         item: BaseMessage = await telegram_event_queue.get()
         logger.info('Очередь получила задачу, агент выполняет...')
-
-
-
 
     async def build_workflow(self):
         builder = StateGraph(State)

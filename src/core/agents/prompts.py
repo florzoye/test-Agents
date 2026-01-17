@@ -5,7 +5,7 @@ from src.models.messages import BaseMessage, Source
 from src.models.client_model import ClientModel
 
 
-class SystemPromptTemplate:
+class DialogSystemPromptTemplate:
     @staticmethod
     def get_system_prompt() -> SystemMessage:
         return SystemMessage(
@@ -53,3 +53,13 @@ class DialogPromptTemplates:
         )
 
         return messages
+
+class SummaryPromptTemplates:
+    @classmethod
+    async def build_message(
+        cls,
+        client: ClientModel,
+        message: BaseMessage,
+        system_prompt: SystemMessage,
+    ):
+        ...
