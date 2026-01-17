@@ -3,8 +3,8 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
-from src.models.messages import BaseMessage, Source
 from data.configs.tg_config import tg_settings
+from src.models.messages import BaseMessage, Source
 from src.app.telegram_queue import telegram_event_queue
 
 router = APIRouter()
@@ -33,7 +33,6 @@ async def telegram_webhook(update: TelegramUpdate):
         user_info = message.get("from", {})
 
         tg_id = user_info.get("id")
-        username = user_info.get("username", "")
         message_date = datetime.datetime.fromtimestamp(message.get("date", datetime.datetime.now().timestamp()))
         content = message.get("text", "")
 

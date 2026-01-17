@@ -1,7 +1,6 @@
 import aiohttp
 from enum import Enum
 from data.configs.tg_config import tg_settings
-from src.models.base.message_sender import MessageSender
 
 TG_API_URL = f"https://api.telegram.org/bot{tg_settings.BOT_TOKEN}/sendMessage"
 
@@ -11,7 +10,7 @@ class TelegramParseMode(Enum):
     MARKDOWN_V2 = "MarkdownV2"
     NONE = None  
 
-class TelegramSender(MessageSender):
+class TelegramSender:
     async def send_message(
         self,
         content: str | None = None,
@@ -33,4 +32,3 @@ class TelegramSender(MessageSender):
                 else:
                     return False
                 
-    async def check_delivery_status(self, message_id): ...
