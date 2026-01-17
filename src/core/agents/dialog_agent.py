@@ -8,11 +8,11 @@ from src.core.agents.models.base import (
     Runnable,
     BaseAgent, 
 )
+from utils.decorators import retry_async
 from src.models.messages import BaseMessage
 from src.models.client_model import ClientModel
 from src.core.agents.prompts import DialogPromptTemplates
-
-from utils.decorators import retry_async
+from data.configs.callbacks_config import CALLBACK_SERVICE
 
 class DialogAgent:
     def __init__(
@@ -20,22 +20,20 @@ class DialogAgent:
         llm: BaseLLM,
         agent_factory: BaseAgent,
         tools: list[BaseTool],
-        langfuse_handler=None
     ):
         self._llm = llm
-        self._agent_factory = agent_factory
         self._tools = tools
-        self._langfuse_handler = langfuse_handler
+        self._agent_factory = agent_factory
         self.agent: Runnable | None = None
 
-    async def init(self):
+    def init(self):
         self.agent = self._agent_factory.lc_create_agent(
             llm=self._llm,
             tools=self._tools,
         )
         
     @retry_async(attempts=3)
-    async def invoke(
+    async def execute(
         self,
         user_message: BaseMessage,
         client_model: ClientModel,
@@ -51,11 +49,9 @@ class DialogAgent:
                 system_prompt=system_prompt
             )
 
-            callbacks = [self._langfuse_handler] if self._langfuse_handler else []
-
             result = await self.agent.ainvoke(
                 {"messages": messages},
-                config={"callbacks": callbacks},
+                config={"callbacks": CALLBACK_SERVICE.callbacks},
             )
 
             return result

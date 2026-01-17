@@ -91,4 +91,4 @@ class GlobalCallbacksService:
             logger.exception("Langfuse init failed")
 
 # ГЛОБАЛЬНЫЙ объект
-callbacks_service = GlobalCallbacksService()
+CALLBACK_SERVICE = GlobalCallbacksService()
