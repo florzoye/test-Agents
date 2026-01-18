@@ -32,9 +32,12 @@ class BaseAgentSingleton(ABC):
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, llm: BaseLLM, tools: List[BaseTool], system_prompt):
+    def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
+        if getattr(self, "_agent_initialized", False):
+            return
+
         self._llm = llm
-        self._tools = tools
+        self._tools = tools or [] 
         self.system_prompt = system_prompt
         self.agent: Optional[Runnable] = None
         self._agent_initialized: bool = False

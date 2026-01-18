@@ -1,9 +1,15 @@
+from typing import Optional, List
+from langchain.tools import BaseTool
 from langchain.messages import AnyMessage
-from src.core.agents.models.base import BaseAgentSingleton
+from src.core.agents.tools.base_tools import dialog_tools
+from src.core.agents.models.base import BaseAgentSingleton, BaseLLM
 from src.core.agents.prompts import DialogPromptTemplates, SummaryPromptTemplates
 from src.core.agents.models.exc import AgentEnum, AgentInitializationException, LLMException
 
 class DialogAgent(BaseAgentSingleton):
+    def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
+        super().__init__(llm, tools=tools or dialog_tools, system_prompt=system_prompt)
+
     def _get_init_exception(self, exp: Exception) -> Exception:
         return AgentInitializationException(agent=AgentEnum.DIALOG, exp=exp)
 
@@ -18,6 +24,9 @@ class DialogAgent(BaseAgentSingleton):
         )
 
 class SummaryAgent(BaseAgentSingleton):
+    def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
+        super().__init__(llm, tools=tools or [], system_prompt=system_prompt)
+        
     def _get_init_exception(self, exp: Exception) -> Exception:
         return AgentInitializationException(agent=AgentEnum.SUMMARY, exp=exp)
 
