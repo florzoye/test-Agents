@@ -44,13 +44,3 @@ def retry_async(
 
     return decorator
 
-def with_langfuse(func):
-    @wraps(func)
-    async def wrapper(self, *args, **kwargs):
-        result = await func(self, *args, **kwargs)
-        
-        if hasattr(self, 'langfuse_handler'):
-            self.langfuse_handler.flush()
-        
-        return result
-    return wrapper
