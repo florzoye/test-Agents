@@ -1,8 +1,8 @@
 import json
 from langchain.messages import SystemMessage, HumanMessage, AIMessage
 
-from src.models.messages import BaseMessage, Source
 from src.models.client_model import ClientModel
+from src.models.messages import BaseMessage, Source
 
 
 class DialogSystemPromptTemplate:
@@ -54,7 +54,7 @@ class DialogPromptTemplates:
 
         return messages
 
-class SummaryPromptTemplates:
+class SummaryPromptTemplates: # TODO
     @classmethod
     async def build_message(
         cls,
@@ -62,4 +62,4 @@ class SummaryPromptTemplates:
         message: BaseMessage,
         system_prompt: SystemMessage,
     ):
-        ...
+        ... 
