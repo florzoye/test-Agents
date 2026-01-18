@@ -14,9 +14,8 @@ from src.core.agents.models.exc import AgentExecutionException, RetryExceptions
 
 from utils.decorators import retry_async
 from utils.retry_handlers import log_retry_simple
-from data.configs.base_config import base_config
-from data.configs.callbacks_config import CALLBACK_SERVICE
 
+from data.configs import BASE_CONFIG, CALLBACK_SERVICE, MIDDLEWARE_SERVICE
 
 class BaseLLM(ABC):
     @abstractmethod
@@ -33,7 +32,8 @@ class CreateAgent:
         agent = create_agent(
             model=llm_instance,
             tools=tools,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            middleware=MIDDLEWARE_SERVICE.middlewares
         )
 
         return agent
@@ -41,7 +41,7 @@ class CreateAgent:
 class BaseAgentSingleton(ABC):
     _instance: Optional['BaseAgentSingleton'] = None
     _init_lock: asyncio.Lock = asyncio.Lock()
-    _execution_semaphore: asyncio.Semaphore = asyncio.Semaphore(base_config.MAX_CONCURRENT_EXECUTE)
+    _execution_semaphore: asyncio.Semaphore = asyncio.Semaphore(BASE_CONFIG.MAX_CONCURRENT_EXECUTE)
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -90,9 +90,9 @@ class BaseAgentSingleton(ABC):
     @retry_async(
         on_retry=log_retry_simple,
         retry_on=RetryExceptions.AGENT_EXCEPTIONS.value,
-        attempts=base_config.ATTEMPS_FOR_RETRY,
-        backoff=base_config.BACKOFF,
-        delay=base_config.DELAY,
+        attempts=BASE_CONFIG.ATTEMPS_FOR_RETRY,
+        backoff=BASE_CONFIG.BACKOFF,
+        delay=BASE_CONFIG.DELAY,
     )
     async def execute(self, client_model: ClientModel, user_message: BaseMessage) -> BaseMessage:
         await self._ensure_agent_async()
