@@ -36,7 +36,7 @@ class DialogPromptTemplates:
             indent=2,
         )
         messages.append(
-            SystemMessage(content=f"Данные клиента:\n{client_json}")
+            SystemMessage(content=f"Данные клиента:\n{client_json}, история сообщений асисстента и клиента далее.")
         )
 
         for msg in client.message_history or []:
@@ -54,7 +54,8 @@ class DialogPromptTemplates:
 
         return messages
 
-class SummaryPromptTemplates: # TODO
+
+class ResearchPromptTemplates: # TODO
     @classmethod
     async def build_message(
         cls,
