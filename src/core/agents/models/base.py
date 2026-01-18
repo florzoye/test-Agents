@@ -2,14 +2,14 @@ import asyncio
 from typing import List, Optional
 from abc import ABC, abstractmethod
 
-from langchain_classic.tools import BaseTool 
+from langchain.agents import create_agent
+from langchain_classic.tools import BaseTool
 from langchain_core.runnables import Runnable
-from langchain.messages import AIMessage, AnyMessage
+from langchain.messages import AIMessage, AnyMessage, SystemMessage
 from langchain_core.language_models import BaseLanguageModel 
 
 from src.models.client_model import ClientModel
 from src.models.messages import BaseMessage, Source
-from src.core.agents.models.base import BaseLLM, CreateAgent
 from src.core.agents.models.exc import AgentExecutionException, RetryExceptions
 
 from utils.decorators import retry_async
@@ -21,6 +21,22 @@ from data.configs.callbacks_config import CALLBACK_SERVICE
 class BaseLLM(ABC):
     @abstractmethod
     def get_llm(self) -> BaseLanguageModel: ...
+
+class CreateAgent:
+    async def lc_create_agent(
+        self,
+        llm: BaseLLM,
+        tools: list[BaseTool],
+        system_prompt: SystemMessage
+    ) -> Runnable:
+        llm_instance = await llm.get_llm()
+        agent = create_agent(
+            model=llm_instance,
+            tools=tools,
+            system_prompt=system_prompt
+        )
+
+        return agent
 
 class BaseAgentSingleton(ABC):
     _instance: Optional['BaseAgentSingleton'] = None
@@ -54,7 +70,8 @@ class BaseAgentSingleton(ABC):
                     None,
                     CreateAgent.lc_create_agent,
                     self._llm,
-                    self._tools
+                    self._tools,
+                    self.system_prompt
                 )
                 self._agent_initialized = True
             except Exception as exp:
