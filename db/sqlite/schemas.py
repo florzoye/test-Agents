@@ -7,7 +7,7 @@ def create_clients_table_sql() -> str:
         full_name TEXT,
         username TEXT,
         email TEXT,
-        instagram_nick TEXT,
+        tg_nick TEXT,
         client_project_info TEXT,
         lead_status TEXT DEFAULT 'new'
     )
@@ -18,11 +18,11 @@ def insert_client_sql() -> str:
     return """
     INSERT OR IGNORE INTO clients (
         tg_id, message_history, age, full_name, username, 
-        email, instagram_nick, client_project_info, lead_status
+        email, tg_nick, client_project_info, lead_status
     )
     VALUES (
         :tg_id, :message_history, :age, :full_name, :username,
-        :email, :instagram_nick, :client_project_info, :lead_status
+        :email, :tg_nick, :client_project_info, :lead_status
     )
     """
 

@@ -57,7 +57,7 @@ class ClientSQL(ClientBase):
                 "full_name": client.full_name or "",
                 "username": client.username or "",
                 "email": client.email or "",
-                "instagram_nick": client.instagram_nick or "",
+                "tg_nick": client.tg_nick or "",
                 "client_project_info": client.client_project_info or "",
                 "lead_status": client.lead_status or "new",
             })

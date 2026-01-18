@@ -61,7 +61,7 @@ class ClientORM(ClientBase):
                 full_name=client_dict.get('full_name', ''),
                 username=client_dict.get('username', ''),
                 email=client_dict.get('email', ''),
-                instagram_nick=client_dict.get('instagram_nick', ''),
+                tg_nick=client_dict.get('tg_nick', ''),
                 client_project_info=client_dict.get('client_project_info', ''),
                 lead_status=client_dict.get('lead_status', 'new'),
             )

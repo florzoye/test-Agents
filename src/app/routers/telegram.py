@@ -30,17 +30,20 @@ async def telegram_webhook(update: TelegramUpdate):
         message = update.message or update.edited_message or update.channel_post
         if not message:
             return {"status": "ignored", "reason": "В сообщении нет данных"}
-        user_info = message.get("from", {})
+        user_info: dict = message.get("from", {})
+        from_info: dict = message.get('from', {})
 
         tg_id = user_info.get("id")
-        message_date = datetime.datetime.fromtimestamp(message.get("date", datetime.datetime.now().timestamp()))
         content = message.get("text", "")
+        tg_nick = from_info.get('username', "")
+        message_date = datetime.datetime.fromtimestamp(message.get("date", datetime.datetime.now().timestamp()))
 
         item = BaseMessage(
             timestamp=message_date,
             source=Source.client,
             content=content,
-            tg_id=tg_id
+            tg_nick=tg_nick,
+            tg_id=tg_id,
         )
 
         await telegram_event_queue.put(item)

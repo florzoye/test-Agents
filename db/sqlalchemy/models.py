@@ -17,7 +17,7 @@ class Users(Base):
     __tablename__ = "users"
 
     tg_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    instagram_nick: Mapped[strnullable]
+    tg_nick: Mapped[strnullable]
     email: Mapped[strnullable] 
     full_name: Mapped[strnullable] 
     client_project_info: Mapped[strnullable] 
