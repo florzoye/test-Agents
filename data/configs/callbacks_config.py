@@ -56,7 +56,7 @@ class GlobalCallbacksService:
 
         self._initialized = True
 
-    def _init_langsmith(self):
+    def _init_langsmith(self) -> None:
         if not self.langsmith_config.LANGCHAIN_TRACING_V2:
             logger.info("LangSmith tracing DISABLED")
             return
@@ -70,7 +70,7 @@ class GlobalCallbacksService:
             f"LangSmith ENABLED | project={self.langsmith_config.LANGCHAIN_PROJECT}"
         )
 
-    def _init_langfuse(self):
+    def _init_langfuse(self) -> None:
         if not self.langfuse_config.USE_LANGFUSE:
             logger.info("Langfuse disabled")
             return
