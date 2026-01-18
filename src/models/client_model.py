@@ -8,7 +8,7 @@ class ClientModel(BaseModel):
 
     Args:
         tg_id (Optional[int]): Telegram id
-        instagram_nick (Optional[str]): Ник в инстаграмме
+        tg_nick (Optional[str]): Ник в инстаграмме
         email (Optional[EmailStr]): Почта клиента
         full_name (Optional[str]): Полное имя клиента
         age (Optional[int]): Возраст клиента в годах
@@ -22,7 +22,7 @@ class ClientModel(BaseModel):
         description="Telegram id"
     )
 
-    instagram_nick: Optional[str] = Field(
+    tg_nick: Optional[str] = Field(
         default=None,
         min_length=1,
         max_length=100,
