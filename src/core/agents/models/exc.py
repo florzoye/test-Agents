@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import StrEnum, Enum
 
 class AgentEnum(StrEnum):
     DIALOG = "DIALOG AGENT"
@@ -30,3 +30,5 @@ class LLMException(AgentException):
     def __init__(self, agent: AgentEnum, exp: Exception, message: str):
         super().__init__(message=message, agent=agent,exp=exp)
 
+class RetryExceptions(Enum):
+    AGENT_EXCEPTIONS =  (LLMException, AgentExecutionException, TimeoutError, ConnectionError)
