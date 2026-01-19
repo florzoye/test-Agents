@@ -2,8 +2,8 @@ import logging
 from datetime import datetime
 from typing import List, Optional
 
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm.attributes import flag_modified
 
 from db.sqlalchemy.models import Base

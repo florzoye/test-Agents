@@ -1,8 +1,8 @@
 import aiohttp
 from enum import Enum
-from data.configs.tg_config import tg_settings
+from data.configs.tg_config import TG_SETTINGS
 
-TG_API_URL = f"https://api.telegram.org/bot{tg_settings.BOT_TOKEN}/sendMessage"
+TG_API_URL = f"https://api.telegram.org/bot{TG_SETTINGS.BOT_TOKEN}/sendMessage"
 
 class TelegramParseMode(Enum):
     HTML = "HTML"

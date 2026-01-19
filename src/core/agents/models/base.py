@@ -15,9 +15,20 @@ from src.core.agents.models.exc import AgentExecutionException, RetryExceptions
 from utils.decorators import retry_async
 from utils.retry_handlers import log_retry_simple
 
-from data.configs import BASE_CONFIG, CALLBACK_SERVICE, MIDDLEWARE_SERVICE
+from data.init_configs import BASE_CONFIG
 
 class BaseLLM(ABC):
+    _llm = None
+    _instance = None
+    _initialized = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._llm = None
+            cls._instance._initialized = False
+        return cls._instance
+    
     @abstractmethod
     def get_llm(self) -> BaseLanguageModel: ...
 
@@ -28,12 +39,13 @@ class CreateAgent:
         tools: list[BaseTool],
         system_prompt: SystemMessage
     ) -> Runnable:
+        from data.init_configs import MIDDLEWARE_SERVICE
         llm_instance = await llm.get_llm()
         agent = create_agent(
             model=llm_instance,
             tools=tools,
             system_prompt=system_prompt,
-            middleware=MIDDLEWARE_SERVICE.middlewares
+            middleware=MIDDLEWARE_SERVICE.middlewares # NOTE
         )
 
         return agent
@@ -101,9 +113,10 @@ class BaseAgentSingleton(ABC):
             try:
                 messages = await self._build_messages(client_model, user_message)
 
+                from data.init_configs import RUNNABLE_CONFIG
                 result_raw: dict = await self.agent.ainvoke(
                     {"messages": messages},
-                    config={"callbacks": CALLBACK_SERVICE.callbacks},
+                    config=RUNNABLE_CONFIG,
                 )
 
                 ai_messages = [
@@ -128,3 +141,15 @@ class BaseAgentSingleton(ABC):
     def _get_execute_exception(self, exp: Exception) -> Exception:
         """кастомное исключение execute"""
         ...
+    
+    def __repr__(self) -> str:
+        agent_status = "initialized" if self._agent_initialized else "not initialized"
+        tools_count = len(self._tools) if self._tools else 0
+        
+        return (
+            f"{self.__class__.__name__}("
+            f"agent={agent_status}, "
+            f"tools={tools_count}, "
+            f"llm={self._llm.__class__.__name__}, "
+            f"max_concurrent={self._execution_semaphore._value})"
+        )

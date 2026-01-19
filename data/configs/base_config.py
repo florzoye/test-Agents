@@ -1,4 +1,5 @@
 import os
+from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -16,4 +17,5 @@ class BaseConfig(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-base_config = BaseConfig()
+BASE_CONFIG = BaseConfig()
+logger.info('BASE_CONFIG инициализирован')

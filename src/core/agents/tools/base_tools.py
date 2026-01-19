@@ -1,5 +1,4 @@
-import json
-from typing import Any, Optional
+from typing import Optional
 from langchain.tools import tool
 
 from db.database import Database

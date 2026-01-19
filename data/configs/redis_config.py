@@ -1,14 +1,11 @@
 import os
-import ssl
-
+from loguru import logger
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 from redis.asyncio import Redis
 from celery import Celery
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
 
 class RedisSettings(BaseSettings):
     REDIS_PORT: int
@@ -42,5 +39,5 @@ redis_client = Redis(
     db=0,
     password=settings.REDIS_PASSWORD
 )
-
 import src.app.queue.tasks
+logger.info('celery_app и redis_client инициализированы')

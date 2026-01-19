@@ -1,4 +1,4 @@
-from data.configs.database_config import db_config
+from data.init_configs import DB_CONFIG
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 class SQLAlchemyManager:
@@ -11,7 +11,7 @@ class SQLAlchemyManager:
         if self.engine is not None:
             return  
         
-        database_url = db_config.url()
+        database_url = DB_CONFIG.url()
         
         self.engine = create_async_engine(
             database_url,

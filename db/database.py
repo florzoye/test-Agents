@@ -1,5 +1,5 @@
 import logging
-from data.configs.database_config import db_config
+from data.init_configs import DB_CONFIG
 from db.factory import ClientFactory, DatabaseType
 from db.sqlite.manager import AsyncDatabaseManager
 from db.sqlalchemy.session import SQLAlchemyManager
@@ -15,8 +15,8 @@ class Database:
         self.logger = logging.getLogger(self.__class__.__name__)
     
     async def setup(self):
-        if db_config.DB_TYPE == "sqlite":
-            self.sqlite_manager = AsyncDatabaseManager(db_config.SQLITE_PATH)
+        if DB_CONFIG.DB_TYPE == "sqlite":
+            self.sqlite_manager = AsyncDatabaseManager(DB_CONFIG.SQLITE_PATH)
             await self.sqlite_manager.connect()
             
             self.repo: ClientBase = ClientFactory.create(
@@ -24,7 +24,7 @@ class Database:
                 self.sqlite_manager
             )
             await self.repo.create_tables()
-            self.logger.info(f"✅ SQLite подключена: {db_config.SQLITE_PATH}")
+            self.logger.info(f"✅ SQLite подключена: {DB_CONFIG.SQLITE_PATH}")
         else:
             self.sqlalchemy_manager = SQLAlchemyManager()
             self.sqlalchemy_manager.init()
@@ -36,7 +36,7 @@ class Database:
                 session
             )
 
-            db_url = db_config.url
+            db_url = DB_CONFIG.url
             safe_url = db_url.split('@')[1] if '@' in db_url else db_url
             self.logger.info(f"✅ PostgreSQL подключена: {safe_url}")
     

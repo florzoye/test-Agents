@@ -1,4 +1,5 @@
 import os
+from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -28,5 +29,5 @@ class DBConfig(BaseSettings):
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
 
-    
-db_config = DBConfig()
+DB_CONFIG = DBConfig()
+logger.info('DB_CONFIG Инициализирован')

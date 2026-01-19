@@ -1,11 +1,12 @@
 import os
-from typing import Optional
 from loguru import logger
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
 from langfuse import Langfuse, get_client
 from langfuse.langchain import CallbackHandler
+from langchain_core.callbacks.base import BaseCallbackHandler
 
 load_dotenv(find_dotenv())
 
@@ -49,8 +50,9 @@ class GlobalCallbacksService:
 
         self.langfuse_config = LangFuseConfig()
         self.langsmith_config = LangSmithConfig()
-
-        self.callbacks: list = []
+        logger.info('LangFuseConfig и LangSmithConfig инциализированы')
+        
+        self.callbacks: list[BaseCallbackHandler] = []
         self.langfuse_handler: Optional[CallbackHandler] = None
 
         self._init_langsmith()
@@ -83,7 +85,7 @@ class GlobalCallbacksService:
                 secret_key=self.langfuse_config.LANGFUSE_SECRET_KEY,
                 host=self.langfuse_config.LANGFUSE_BASE_URL,
             )
-
+            self.client = get_client()
             self.langfuse_handler = CallbackHandler()
             self.callbacks.append(self.langfuse_handler)
 
@@ -92,5 +94,4 @@ class GlobalCallbacksService:
         except Exception:
             logger.exception("Langfuse init failed")
 
-# ГЛОБАЛЬНЫЙ объект
-CALLBACK_SERVICE = GlobalCallbacksService()
+

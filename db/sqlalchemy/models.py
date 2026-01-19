@@ -1,6 +1,6 @@
 from typing import Annotated
-from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import Integer, JSON, String
+from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from src.models.messages import BaseMessage
