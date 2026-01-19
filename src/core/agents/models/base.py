@@ -1,8 +1,7 @@
 import asyncio
-from typing import List, Optional
+from typing import Optional
 from abc import ABC, abstractmethod
 
-from langchain_classic.tools import BaseTool
 from langchain_core.runnables import Runnable
 from langchain.messages import AIMessage, AnyMessage
 from langchain_core.language_models import BaseChatModel 
@@ -12,7 +11,7 @@ from src.models.messages import BaseMessage, Source
 from src.exceptions.agent_exp import AgentExecutionException
 
 from src.enum.exc import RetryExceptionsEnum
-from src.utils.factrory import AgentFactory
+from src.factories.agent_factory import AgentFactory
 
 from utils.decorators import retry_async
 from utils.retry_handlers import log_retry_simple
@@ -43,12 +42,11 @@ class BaseAgentSingleton(ABC):
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
+    def __init__(self, llm: BaseLLM, system_prompt=None):
         if getattr(self, "_agent_initialized", False):
             return
 
         self._llm = llm
-        self._tools = tools or [] 
         self.system_prompt = system_prompt
         self.agent: Optional[Runnable] = None
         self._agent_initialized: bool = False
@@ -62,8 +60,7 @@ class BaseAgentSingleton(ABC):
             try:
                 self.agent = await AgentFactory().lc_create_agent(
                     self._llm,
-                    self._tools,
-                    self.system_prompt
+                    self.system_prompt,
                 )
                 self._agent_initialized = True
             except Exception as exp:
