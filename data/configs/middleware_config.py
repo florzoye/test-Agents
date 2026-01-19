@@ -1,13 +1,15 @@
 import pkgutil
 import importlib
 from typing import List
-from pathlib import Path
 from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from data.init_configs import BASE_CONFIG
 
+from src.core.agents.models.base import BaseLLM
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+
 
 class MiddlewareConfig(BaseSettings):
     MAIN_MODEL: str
@@ -38,8 +40,6 @@ class MiddlewareService:
         self._initialized = True
 
     def _append_middleware(self) -> None:
-        from src.core.agents.models.base import BaseLLM
-
         llms_path = "src/core/agents/llms"
         for _, module_name, _ in pkgutil.iter_modules([str(llms_path)]):
             importlib.import_module(f"src.core.agents.llms.{module_name}")
@@ -52,7 +52,6 @@ class MiddlewareService:
             *llm_instances[::-1]
         ))
 
-        from data.init_configs import BASE_CONFIG
         self._middleware_lst.append(
             ToolRetryMiddleware(
                 backoff_factor=BASE_CONFIG.BACKOFF,
