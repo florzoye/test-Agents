@@ -40,9 +40,9 @@ class MiddlewareService:
     def _append_middleware(self) -> None:
         from src.core.agents.models.base import BaseLLM
 
-        llms_path = Path(__file__).parent.parent / "llms"
+        llms_path = "src/core/agents/llms"
         for _, module_name, _ in pkgutil.iter_modules([str(llms_path)]):
-            importlib.import_module(f"data.llms.{module_name}")
+            importlib.import_module(f"src.core.agents.llms.{module_name}")
 
         llm_instances = [cls().get_llm() for cls in BaseLLM.__subclasses__()]
         if not llm_instances:
