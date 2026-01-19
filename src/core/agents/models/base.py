@@ -2,20 +2,21 @@ import asyncio
 from typing import List, Optional
 from abc import ABC, abstractmethod
 
-from langchain.agents import create_agent
 from langchain_classic.tools import BaseTool
 from langchain_core.runnables import Runnable
-from langchain.messages import AIMessage, AnyMessage, SystemMessage
-from langchain_core.language_models import BaseLanguageModel 
+from langchain.messages import AIMessage, AnyMessage
+from langchain_core.language_models import BaseChatModel 
 
 from src.models.client_model import ClientModel
 from src.models.messages import BaseMessage, Source
-from src.core.agents.models.exc import AgentExecutionException, RetryExceptions
+from src.exceptions.agent_exp import AgentExecutionException
+
+from src.enum.exc import RetryExceptionsEnum
+from src.utils.factrory import AgentFactory
 
 from utils.decorators import retry_async
 from utils.retry_handlers import log_retry_simple
-
-from data.init_configs import BASE_CONFIG
+from data.init_configs import BASE_CONFIG, RUNNABLE_CONFIG
 
 class BaseLLM(ABC):
     _llm = None
@@ -30,25 +31,7 @@ class BaseLLM(ABC):
         return cls._instance
     
     @abstractmethod
-    def get_llm(self) -> BaseLanguageModel: ...
-
-class CreateAgent:
-    async def lc_create_agent(
-        self,
-        llm: BaseLLM,
-        tools: list[BaseTool],
-        system_prompt: SystemMessage
-    ) -> Runnable:
-        from data.init_configs import MIDDLEWARE_SERVICE
-        llm_instance = await llm.get_llm()
-        agent = create_agent(
-            model=llm_instance,
-            tools=tools,
-            system_prompt=system_prompt,
-            middleware=MIDDLEWARE_SERVICE.middlewares # NOTE
-        )
-
-        return agent
+    def get_llm(self) -> BaseChatModel: ...
 
 class BaseAgentSingleton(ABC):
     _instance: Optional['BaseAgentSingleton'] = None
@@ -77,10 +60,7 @@ class BaseAgentSingleton(ABC):
             if self._agent_initialized:
                 return
             try:
-                loop = asyncio.get_event_loop()
-                self.agent = await loop.run_in_executor(
-                    None,
-                    CreateAgent.lc_create_agent,
+                self.agent = await AgentFactory().lc_create_agent(
                     self._llm,
                     self._tools,
                     self.system_prompt
@@ -101,7 +81,7 @@ class BaseAgentSingleton(ABC):
 
     @retry_async(
         on_retry=log_retry_simple,
-        retry_on=RetryExceptions.AGENT_EXCEPTIONS.value,
+        retry_on=RetryExceptionsEnum.AGENT_EXCEPTIONS.value,
         attempts=BASE_CONFIG.ATTEMPS_FOR_RETRY,
         backoff=BASE_CONFIG.BACKOFF,
         delay=BASE_CONFIG.DELAY,
@@ -112,8 +92,6 @@ class BaseAgentSingleton(ABC):
         async with self._execution_semaphore:
             try:
                 messages = await self._build_messages(client_model, user_message)
-
-                from data.init_configs import RUNNABLE_CONFIG
                 result_raw: dict = await self.agent.ainvoke(
                     {"messages": messages},
                     config=RUNNABLE_CONFIG,

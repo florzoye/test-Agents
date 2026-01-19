@@ -1,10 +1,10 @@
 import logging
 from data.init_configs import DB_CONFIG
-from db.factory import ClientFactory, DatabaseType
+
+from db.database_protocol import ClientBase
 from db.sqlite.manager import AsyncDatabaseManager
 from db.sqlalchemy.session import SQLAlchemyManager
-from db.database_protocol import ClientBase
-
+from src.utils.factrory import ClientFactory, DatabaseType
 
 class Database:
     """Менеджер базы данных"""
