@@ -1,10 +1,6 @@
-from enum import StrEnum
 from datetime import datetime
+from src.enum.client import Source
 from pydantic import BaseModel, Field, ConfigDict
-
-class Source(StrEnum):
-    client = 'client'
-    agent = 'agent'
 
 class BaseMessage(BaseModel):
     model_config = ConfigDict(from_attributes=True)

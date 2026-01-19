@@ -4,7 +4,6 @@ from langchain.messages import SystemMessage, HumanMessage, AIMessage
 from src.models.client_model import ClientModel
 from src.models.messages import BaseMessage, Source
 
-
 class DialogSystemPromptTemplate:
     @staticmethod
     def get_system_prompt() -> SystemMessage:
@@ -23,12 +22,9 @@ class DialogPromptTemplates:
         cls,
         client: ClientModel,
         message: BaseMessage,
-        system_prompt: SystemMessage,
     ) -> list:
 
         messages: list = []
-
-        messages.append(system_prompt)
 
         client_json = json.dumps(
             client.model_dump(exclude_none=True, exclude={"message_history"}),
@@ -43,9 +39,9 @@ class DialogPromptTemplates:
             if not msg.content:
                 continue
 
-            if msg.source == Source.user:
+            if msg.source == Source.CLIENT:
                 messages.append(HumanMessage(content=msg.content))
-            elif msg.source == Source.agent:
+            elif msg.source == Source.AGENT:
                 messages.append(AIMessage(content=msg.content))
 
         messages.append(

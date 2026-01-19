@@ -5,7 +5,7 @@ from langchain.messages import AnyMessage
 from src.core.agents.tools.base_tools import dialog_tools
 from src.core.agents.models.base import BaseAgentSingleton, BaseLLM
 from src.core.agents.prompts import DialogPromptTemplates, ResearchPromptTemplates
-from src.core.agents.models.exc import AgentEnum, AgentInitializationException, LLMException
+from src.exceptions.agent_exp import AgentEnum, AgentInitializationException, LLMException
 
 class DialogAgent(BaseAgentSingleton):
     def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
@@ -21,7 +21,6 @@ class DialogAgent(BaseAgentSingleton):
         return await DialogPromptTemplates.build_messages(
             client=client_model,
             message=user_message,
-            system_prompt=self.system_prompt
         )
 
 class ResearchAgent(BaseAgentSingleton):
@@ -38,5 +37,4 @@ class ResearchAgent(BaseAgentSingleton):
         return await ResearchPromptTemplates.build_message(
             client=client_model,
             message=user_message,
-            system_prompt=self.system_prompt
         )
