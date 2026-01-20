@@ -29,4 +29,5 @@ dependencies = [
     "sentencepiece>=0.2.1",
     "hf-xet>=1.2.0",
     "ipython>=9.9.0",
+    "langchain-openai>=1.1.7",
 ]
