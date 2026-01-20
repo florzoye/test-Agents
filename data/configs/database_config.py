@@ -1,5 +1,4 @@
 import os
-from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -18,16 +17,15 @@ class DBConfig(BaseSettings):
     BASE_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     UPLOAD_DIR: str = os.path.join(BASE_DIR, 'app/uploads')
     STATIC_DIR: str = os.path.join(BASE_DIR, 'app/static')
+    
     model_config = SettingsConfigDict(
         env_file=os.path.join(BASE_DIR, ".env"),
         env_file_encoding="utf-8",
     )
+    
     @property
     def url(self) -> str:
         return (
             f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
-
-DB_CONFIG = DBConfig()
-logger.info('DB_CONFIG Инициализирован')

@@ -1,6 +1,5 @@
 import os
-from loguru import logger
-from typing import Optional
+from typing import Optional, List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -35,6 +34,7 @@ class LangSmithConfig(BaseSettings):
         extra="ignore",
     )
 
+
 class GlobalCallbacksService:
     _instance = None
     _initialized = False
@@ -48,21 +48,27 @@ class GlobalCallbacksService:
         if self._initialized:
             return
 
+        self.langfuse_config: Optional[LangFuseConfig] = None
+        self.langsmith_config: Optional[LangSmithConfig] = None
+        self.callbacks: List[BaseCallbackHandler] = []
+        self.langfuse_handler: Optional[CallbackHandler] = None
+        self.client: Optional[Langfuse] = None
+
+    def initialize(self):
+        if self._initialized:
+            return
+
         self.langfuse_config = LangFuseConfig()
         self.langsmith_config = LangSmithConfig()
-        logger.info('LangFuseConfig и LangSmithConfig инциализированы')
         
-        self.callbacks: list[BaseCallbackHandler] = []
-        self.langfuse_handler: Optional[CallbackHandler] = None
-
         self._init_langsmith()
         self._init_langfuse()
 
         self._initialized = True
 
     def _init_langsmith(self) -> None:
+        """Инициализация LangSmith трейсинга"""
         if not self.langsmith_config.LANGCHAIN_TRACING_V2:
-            logger.info("LangSmith tracing DISABLED")
             return
 
         os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -70,13 +76,9 @@ class GlobalCallbacksService:
         os.environ["LANGCHAIN_PROJECT"] = self.langsmith_config.LANGCHAIN_PROJECT or ""
         os.environ["LANGCHAIN_ENDPOINT"] = self.langsmith_config.LANGCHAIN_ENDPOINT
 
-        logger.success(
-            f"LangSmith ENABLED | project={self.langsmith_config.LANGCHAIN_PROJECT}"
-        )
-
     def _init_langfuse(self) -> None:
+        """Инициализация Langfuse трейсинга"""
         if not self.langfuse_config.USE_LANGFUSE:
-            logger.info("Langfuse disabled")
             return
 
         try:
@@ -89,9 +91,5 @@ class GlobalCallbacksService:
             self.langfuse_handler = CallbackHandler()
             self.callbacks.append(self.langfuse_handler)
 
-            logger.success("Langfuse initialized")
-
         except Exception:
-            logger.exception("Langfuse init failed")
-
-
+            pass

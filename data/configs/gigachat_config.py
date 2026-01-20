@@ -1,5 +1,4 @@
 import os
-from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -14,7 +13,4 @@ class GigaChatConfig(BaseSettings):
         env_file=os.path.join(BASE_DIR, ".env"),
         env_file_encoding="utf-8",
     )
-    GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS" 
-
-GIGA_CHAT_CONFIG = GigaChatConfig()
-logger.info('GIGA_CHAT_CONFIG Инициализирован')
+    GIGACHAT_SCOPE: str = "GIGACHAT_API_PERS"

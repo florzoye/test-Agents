@@ -1,5 +1,4 @@
 import os
-from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv, find_dotenv
 
@@ -17,6 +16,3 @@ class BaseLLMConfig(BaseSettings):
         env_file=os.path.join(BASE_DIR, ".env"),
         env_file_encoding="utf-8",
     )
-
-BASE_LLM_CONFIG = BaseLLMConfig()
-logger.info('BASE_LLM_CONFIG Инициализирован')

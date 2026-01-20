@@ -20,49 +20,86 @@ class MiddlewareConfig(BaseSettings):
         extra="ignore",
     )
 
-MIDDLEWARE_CONFIG = MiddlewareConfig()
-logger.info('MIDDLEWARE_CONFIG Инициализирован')
 
 class MiddlewareService:
     _instance = None
     _initialized = False
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self):
-        if getattr(self, "_initialized", False):
+        if self._initialized:
             return
         self._middleware_lst: List[AgentMiddleware] = []
-        self._initialized = True
+        self._initialized = False  
 
-    def _append_middleware(self) -> None:
-        from data.init_configs import BASE_CONFIG
+    def _append_middleware(self, base_config) -> List[AgentMiddleware]:
+        if self._middleware_lst:
+            return self._middleware_lst
 
-        llms_path = "src/core/agents/llms"
-        for _, module_name, _ in pkgutil.iter_modules([str(llms_path)]):
-            importlib.import_module(f"src.core.agents.llms.{module_name}")
-
-        llm_instances = [cls().get_llm() for cls in BaseLLM.__subclasses__()]
-        if not llm_instances:
-            raise RuntimeError("Нет зарегистрированных LLM!")
+        logger.info('Загрузка LLM модулей...')
         
-        self._middleware_lst.append(ModelFallbackMiddleware(
-            *llm_instances[::-1]
-        ))
+        # Динамическая загрузка всех LLM модулей
+        llms_path = "src/core/agents/llms"
+        loaded_modules = []
+        for _, module_name, _ in pkgutil.iter_modules([str(llms_path)]):
+            try:
+                importlib.import_module(f"src.core.agents.llms.{module_name}")
+                loaded_modules.append(module_name)
+            except Exception as e:
+                logger.warning(f'⚠ Не удалось загрузить модуль {module_name}: {e}')
+        
+        if loaded_modules:
+            logger.info(f'Загружено LLM модулей: {", ".join(loaded_modules)}')
+
+        # Получаем все подклассы BaseLLM
+        llm_classes = BaseLLM.__subclasses__()
+        if not llm_classes:
+            raise RuntimeError("Нет зарегистрированных LLM классов")
+            
+        logger.info(f'Найдено LLM классов: {[cls.__name__ for cls in llm_classes]}')
+        
+        # Создание инстансов LLM и получение реальных LLM объектов
+        llm_instances = []
+        for llm_class in llm_classes:
+            try:
+                wrapper = llm_class()
+                llm = wrapper.get_llm()
+                llm_instances.append(llm)
+                logger.success(f'  ✓ {llm_class.__name__}')
+            except Exception as e:
+                logger.error(f'  ✗ Ошибка инициализации {llm_class.__name__}: {e}')
+        
+        if not llm_instances:
+            raise RuntimeError("Не удалось инициализировать ни один LLM!")
+        
+        logger.info(f'Инициализировано {len(llm_instances)} LLM')
+        
+        # Добавление middleware
+        self._middleware_lst.append(
+            ModelFallbackMiddleware(*llm_instances[::-1])
+        )
+        logger.success(f'✓ ModelFallbackMiddleware ({len(llm_instances)} моделей)')
 
         self._middleware_lst.append(
             ToolRetryMiddleware(
-                backoff_factor=BASE_CONFIG.BACKOFF,
-                max_retries=BASE_CONFIG.ATTEMPS_FOR_RETRY
+                backoff_factor=base_config.BACKOFF,
+                max_retries=base_config.ATTEMPS_FOR_RETRY
             )
         )
+        logger.success(f'✓ ToolRetryMiddleware (retries={base_config.ATTEMPS_FOR_RETRY})')
+        
+        self._initialized = True
         return self._middleware_lst
 
     @property
-    def middlewares(self):
+    def middlewares(self) -> List[AgentMiddleware]:
+        """Получение списка middleware"""
         if not self._middleware_lst:
-            self._append_middleware()
+            raise RuntimeError(
+                "Middleware не инициализированы. Вызовите init() из data.init_configs"
+            )
         return self._middleware_lst
