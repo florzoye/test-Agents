@@ -3,11 +3,14 @@ from langchain_community.llms.gigachat import GigaChat
 from langchain_core.language_models import BaseChatModel
 
 from src.core.agents.models.base import BaseLLM
-from data.configs.llm_config import BASE_LLM_CONFIG
-from data.configs.gigachat_config import GIGA_CHAT_CONFIG
+from data.init_configs import BASE_LLM_CONFIG
+from data.init_configs import GIGA_CHAT_CONFIG
 
 
 class GetGigaChat(BaseLLM):
+    _llm: GigaChat = None
+    _initialized: bool = False
+
     def get_llm(self) -> BaseChatModel:
         if not self._initialized:
             self._llm = GigaChat(
@@ -21,7 +24,7 @@ class GetGigaChat(BaseLLM):
                 verbose=BASE_LLM_CONFIG.VERBOSE,
             )
             self._initialized = True
-            logger.info(f'GetGigaChat инициализирован - {repr(GetGigaChat)}')
+            logger.info(f'GetGigaChat инициализирован - {repr(self)}')
         return self._llm
     
     def __repr__(self) -> str:
