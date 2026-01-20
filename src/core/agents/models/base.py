@@ -14,7 +14,6 @@ from src.factories.agent_factory import AgentFactory
 
 from utils.decorators import retry_async
 from utils.retry_handlers import log_retry_simple
-from data.configs.base_config import BASE_CONFIG
 
 class BaseLLM(ABC):
     _instance = None
@@ -42,8 +41,11 @@ class BaseAgentSingleton(ABC):
         if getattr(self, "_agent_initialized", False):
             return
 
+        from data.init_configs import get_config
+        base_config = get_config().BASE_CONFIG
+
         self._execution_semaphore = asyncio.Semaphore(
-            BASE_CONFIG.MAX_CONCURRENT_EXECUTE
+            base_config.MAX_CONCURRENT_EXECUTE
         )
         self._llm = llm
         self.system_prompt = system_prompt
@@ -83,45 +85,44 @@ class BaseAgentSingleton(ABC):
         client_model: ClientModel,
     ) -> object: ...
 
-    @retry_async(
-        on_retry=log_retry_simple,
-        attempts=BASE_CONFIG.ATTEMPS_FOR_RETRY,
-        backoff=BASE_CONFIG.BACKOFF,
-        delay=BASE_CONFIG.DELAY,
-    )
-    async def execute(self, client_model: ClientModel, user_message: BaseMessage) -> BaseMessage | Dict:
-        await self._ensure_agent_async()
-        from data.init_configs import  RUNNABLE_CONFIG
+    async def execute(
+        self, 
+        client_model: ClientModel, 
+        user_message: BaseMessage
+    ) -> BaseMessage | Dict:
+        
+        from data.init_configs import get_config
+        base_config = get_config().BASE_CONFIG
+        runnable_config = get_config().RUNNABLE_CONFIG
 
-        async with self._execution_semaphore:
-            try:
-                messages = await self._build_messages(client_model, user_message)
-                result_raw: dict = await self.agent.ainvoke(
-                    {"messages": messages},
-                    config=RUNNABLE_CONFIG,
-                )
+        @retry_async(
+            on_retry=log_retry_simple,
+            attempts=base_config.ATTEMPS_FOR_RETRY,
+            backoff=base_config.BACKOFF,
+            delay=base_config.DELAY,
+        )
+        async def _execute_with_retry():
+            await self._ensure_agent_async()
 
-                return await self._get_model_response_result(
-                    result_raw,
-                    client_model=client_model,
-                )
-                # ai_messages = [
-                #     msg for msg in result_raw.get("messages", [])
-                #     if isinstance(msg, AIMessage)
-                # ]
+            async with self._execution_semaphore:
+                try:
+                    messages = await self._build_messages(client_model, user_message)
+                    result_raw: dict = await self.agent.ainvoke(
+                        {"messages": messages},
+                        config=runnable_config,
+                    )
 
-                # content = ai_messages[-1].content if ai_messages else "Контент не получен"
+                    return await self._get_model_response_result(
+                        result_raw,
+                        client_model=client_model,
+                    )
 
-                # return BaseMessage(
-                #     content=content,
-                #     source=Source.agent,
-                #     tg_id=client_model.tg_id
-                # )
+                except AgentExecutionException:
+                    raise
+                except Exception as exp:
+                    raise self._get_execute_exception(exp)
 
-            except AgentExecutionException:
-                raise
-            except Exception as exp:
-                raise self._get_execute_exception(exp)
+        return await _execute_with_retry()
 
     @abstractmethod
     def _get_execute_exception(self, exp: Exception) -> Exception:

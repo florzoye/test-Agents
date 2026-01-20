@@ -3,11 +3,12 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
-from data.init_configs import tg_settings
+from data.init_configs import get_config
 from src.models.messages import BaseMessage, Source
 from src.app.telegram_queue import telegram_event_queue
 
 router = APIRouter()
+config = get_config()
 
 class TelegramUpdate(BaseModel):
     update_id: int
@@ -28,6 +29,7 @@ async def telegram_webhook(update: TelegramUpdate):
     """
     try:
         message = update.message or update.edited_message or update.channel_post
+        print(f"Получено обновление от Telegram: {message}")
         if not message:
             return {"status": "ignored", "reason": "В сообщении нет данных"}
         user_info: dict = message.get("from", {})
@@ -40,7 +42,7 @@ async def telegram_webhook(update: TelegramUpdate):
 
         item = BaseMessage(
             timestamp=message_date,
-            source=Source.client,
+            source=Source.CLIENT,
             content=content,
             tg_nick=tg_nick,
             tg_id=tg_id,
@@ -61,6 +63,6 @@ async def verify_webhook():
     return {
         "message": "Telegram webhook активен!",
         "instructions": "Отправьте POST запрос с обновлением Telegram для тестирования.",
-        "bot_token_configured": bool(tg_settings.BOT_TOKEN)
+        "bot_token_configured": True
     }
 

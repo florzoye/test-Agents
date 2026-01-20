@@ -1,8 +1,10 @@
 import aiohttp
 from src.enum.tg import TelegramParseMode
-from data.configs.tg_config import TG_SETTINGS
+from data.init_configs import get_config
 
-TG_API_URL = f"https://api.telegram.org/bot{TG_SETTINGS.BOT_TOKEN}/sendMessage"
+config = get_config()
+BOT_TOKEN = config.TG_SETTINGS.bot_token
+TG_API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
 class TelegramSender:
     async def send_message(
