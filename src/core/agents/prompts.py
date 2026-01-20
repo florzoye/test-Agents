@@ -57,6 +57,29 @@ class ResearchPromptTemplates: # TODO
         cls,
         client: ClientModel,
         message: BaseMessage,
-        system_prompt: SystemMessage,
     ):
-        ... 
+        messages: list = []
+
+        client_json = json.dumps(
+            client.model_dump(exclude_none=True, exclude={"message_history"}),
+            ensure_ascii=False,
+            indent=2,
+        )
+        messages.append(
+            SystemMessage(content=f"Данные клиента:\n{client_json}, история сообщений асисстента и клиента далее.")
+        )
+
+        for msg in client.message_history or []:
+            if not msg.content:
+                continue
+
+            if msg.source == Source.CLIENT:
+                messages.append(HumanMessage(content=msg.content))
+            elif msg.source == Source.AGENT:
+                messages.append(AIMessage(content=msg.content))
+
+        messages.append(
+            HumanMessage(content=message.content)
+        )
+        print(messages)
+        return messages 
