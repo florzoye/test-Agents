@@ -7,6 +7,6 @@ class BaseMessage(BaseModel):
     
     content: str
     source: Source
-    tg_id: str | None = None
+    tg_id: int | str | None = None
     tg_nick: str | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
