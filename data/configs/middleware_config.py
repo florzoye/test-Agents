@@ -3,7 +3,6 @@ import importlib
 from typing import List
 from loguru import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from data.init_configs import BASE_CONFIG
 
 from src.core.agents.models.base import BaseLLM
 from langchain.agents.middleware.types import AgentMiddleware
@@ -40,6 +39,8 @@ class MiddlewareService:
         self._initialized = True
 
     def _append_middleware(self) -> None:
+        from data.init_configs import BASE_CONFIG
+
         llms_path = "src/core/agents/llms"
         for _, module_name, _ in pkgutil.iter_modules([str(llms_path)]):
             importlib.import_module(f"src.core.agents.llms.{module_name}")
