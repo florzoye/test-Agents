@@ -6,6 +6,7 @@ class StructuredOutputAdapter(LLMAdapter):
     def __init__(
         self, 
         schema: Type[Any],
+        *,
         method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
         include_raw: bool = False,
     ):
