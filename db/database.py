@@ -4,7 +4,7 @@ from data.init_configs import DB_CONFIG
 from db.database_protocol import ClientBase
 from db.sqlite.manager import AsyncDatabaseManager
 from db.sqlalchemy.session import SQLAlchemyManager
-from src.utils.factrory import ClientFactory, DatabaseType
+from src.factories.client_factory import ClientFactory, DatabaseType
 
 class Database:
     """Менеджер базы данных"""

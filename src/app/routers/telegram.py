@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from fastapi import APIRouter, HTTPException
 
-from data.configs.tg_config import tg_settings
+from data.init_configs import tg_settings
 from src.models.messages import BaseMessage, Source
 from src.app.telegram_queue import telegram_event_queue
 
