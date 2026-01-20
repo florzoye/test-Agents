@@ -1,15 +1,15 @@
-from typing import Optional, List
-from langchain.tools import BaseTool
-from langchain.messages import AnyMessage
+from langchain.messages import AnyMessage, AIMessage, SystemMessage
 
-from src.core.agents.tools.base_tools import dialog_tools
+from src.enum.client import Source
+from src.models.messages import BaseMessage
+from src.models.client_model import ClientModel
 from src.core.agents.models.base import BaseAgentSingleton, BaseLLM
 from src.core.agents.prompts import DialogPromptTemplates, ResearchPromptTemplates
 from src.exceptions.agent_exp import AgentEnum, AgentInitializationException, LLMException
 
 class DialogAgent(BaseAgentSingleton):
-    def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
-        super().__init__(llm, tools=tools or dialog_tools, system_prompt=system_prompt)
+    def __init__(self, *, llm: BaseLLM, system_prompt: SystemMessage):
+        super().__init__(llm=llm, system_prompt=system_prompt)
 
     def _get_init_exception(self, exp: Exception) -> Exception:
         return AgentInitializationException(agent=AgentEnum.DIALOG, exp=exp)
@@ -22,10 +22,27 @@ class DialogAgent(BaseAgentSingleton):
             client=client_model,
             message=user_message,
         )
+    async def _get_model_response_result(self,result_raw: dict, *, client_model: ClientModel) -> dict:
+        ai_messages = [
+                msg for msg in result_raw.get("messages", [])
+                if isinstance(msg, AIMessage)
+            ]
+
+        if not ai_messages:
+            raise LLMException(
+                agent=AgentEnum.DIALOG,
+                message="LLM не вернула AIMessage"
+            )
+
+        return BaseMessage(
+            content=ai_messages[-1].content,
+            source=Source.agent,
+            tg_id=client_model.tg_id,
+        )
 
 class ResearchAgent(BaseAgentSingleton):
-    def __init__(self, llm: BaseLLM, tools: Optional[List[BaseTool]] = None, system_prompt=None):
-        super().__init__(llm, tools=tools or [], system_prompt=system_prompt)
+    def __init__(self, *, llm: BaseLLM, system_prompt: SystemMessage):
+        super().__init__(llm=llm, system_prompt=system_prompt)
 
     def _get_init_exception(self, exp: Exception) -> Exception:
         return AgentInitializationException(agent=AgentEnum.RESEARCH, exp=exp)
@@ -38,3 +55,28 @@ class ResearchAgent(BaseAgentSingleton):
             client=client_model,
             message=user_message,
         )
+    
+    async def _get_model_response_result(self, result_raw: dict, *, client_model: ClientModel) -> dict:
+        print(result_raw)
+        messages = result_raw.get("messages", [])
+        ai_messages = [msg for msg in messages if isinstance(msg, AIMessage)]
+
+        if not ai_messages:
+            raise LLMException(
+                agent=AgentEnum.RESEARCH,
+                exp=ValueError("Нет AIMessage в ответе LLM"),
+                message="LLM не вернула AIMessage"
+            )
+
+        # parse JSON content
+        import json
+        try:
+            structured_output = json.loads(ai_messages[-1].content.strip("```json\n").strip())
+        except Exception as e:
+            raise LLMException(
+                agent=AgentEnum.RESEARCH,
+                exp=e,
+                message="Не удалось разобрать JSON из ответа LLM"
+            )
+
+        return structured_output
