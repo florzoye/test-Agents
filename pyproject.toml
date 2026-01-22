@@ -30,4 +30,5 @@ dependencies = [
     "hf-xet>=1.2.0",
     "ipython>=9.9.0",
     "langchain-openai>=1.1.7",
+    "deepagents>=0.3.6",
 ]
