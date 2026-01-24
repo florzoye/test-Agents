@@ -31,4 +31,9 @@ dependencies = [
     "ipython>=9.9.0",
     "langchain-openai>=1.1.7",
     "deepagents>=0.3.6",
+    "langsmith>=0.6.4",
+    "fastmcp>=2.14.4",
+    "langchain-mcp-adapters>=0.2.1",
+    "mcp[cli]>=1.25.0",
+    "rlm-toolkit>=2.3.0",
 ]
