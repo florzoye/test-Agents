@@ -4,13 +4,11 @@ from typing import Optional, List
 from src.models.messages import BaseMessage
 from src.models.client_model import ClientModel
 from src.app.queue.scheduler import schedule_tg_message, cancel_message
-
 from utils.database_repo import get_database_repo
 
 log = logging.getLogger("mcp")
+server = FastMCP('Tools For Agents')
 
-
-mcp = FastMCP('Tools For Agents')
 ALLOWED_UPDATE_FIELDS = {
     "tg_nick",
     "email",
@@ -21,7 +19,7 @@ ALLOWED_UPDATE_FIELDS = {
 }
 
 ### DATABASE tools (recource)
-@mcp.tool
+@server.tool
 async def save_message_to_db(
     tg_id: int | str,
     source: str,
@@ -47,7 +45,7 @@ async def save_message_to_db(
 
     return await db_repo.update_message_history(tg_id, source, message)
 
-@mcp.tool   
+@server.tool   
 async def update_client_field(
     tg_id: int | str,
     *,
@@ -88,7 +86,7 @@ async def update_client_field(
 
     return await db_repo.update_client_fields(tg_id, **valid_fields)
 
-@mcp.tool
+@server.tool
 async def update_client_lead(
     tg_id: int | str,
     lead_status: str
@@ -112,7 +110,7 @@ async def update_client_lead(
         tg_id=tg_id, new_status=lead_status
     )
 
-@mcp.tool
+@server.tool
 async def send_telegram_message(
     tg_id: int, 
     message: str, 
@@ -143,7 +141,7 @@ async def send_telegram_message(
         )
     )
 
-@mcp.tool
+@server.tool
 async def cancel_last_scheduler_message(tg_id: int) -> bool:
     """Отменяет последнее запланированное сообщение для клиента.
     
@@ -159,13 +157,16 @@ async def cancel_last_scheduler_message(tg_id: int) -> bool:
         )
     )
 
-@mcp.resource("clients/{tg_id}")
+@server.resource("clients/{tg_id}")
 async def get_client(tg_id: int | str) -> ClientModel:
     db_repo = await get_database_repo()
     return await db_repo.get_client(tg_id)
 
-@mcp.resource('clients/{tg_id}/messages')
+@server.resource('clients/{tg_id}/messages')
 async def get_client_messages(tg_id: int | str) -> List[BaseMessage]:
     db_repo = await get_database_repo()
     return await db_repo.get_message_history(tg_id)
-    
+
+async def start_mcp() -> None:
+    log.info("FastMCP server starting...")
+    server.run(transport="http", host="127.0.0.1", port=8000)
