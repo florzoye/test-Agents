@@ -36,4 +36,7 @@ dependencies = [
     "langchain-mcp-adapters>=0.2.1",
     "mcp[cli]>=1.25.0",
     "rlm-toolkit>=2.3.0",
+    "langchain-ollama>=1.0.1",
+    "loguru>=0.7.3",
+    "langfuse>=3.12.0",
 ]
