@@ -1,4 +1,5 @@
 from langchain.messages import AnyMessage, AIMessage, SystemMessage
+from pydantic import BaseModel
 
 from src.enum.client import Source
 from src.models.messages import BaseMessage
@@ -56,27 +57,23 @@ class ResearchAgent(BaseAgentSingleton):
             message=user_message,
         )
     
-    async def _get_model_response_result(self, result_raw: dict, *, client_model: ClientModel) -> dict:
-        print(result_raw)
-        messages = result_raw.get("messages", [])
-        ai_messages = [msg for msg in messages if isinstance(msg, AIMessage)]
-
-        if not ai_messages:
+    async def _get_model_response_result(self, result_raw: dict, *, client_model: ClientModel) -> BaseModel:
+        structured_response = result_raw.get("structured_response")
+        if structured_response is None:
             raise LLMException(
                 agent=AgentEnum.RESEARCH,
-                exp=ValueError("Нет AIMessage в ответе LLM"),
-                message="LLM не вернула AIMessage"
+                message="LLM не вернула structured_response"
             )
 
-        # parse JSON content
-        import json
-        try:
-            structured_output = json.loads(ai_messages[-1].content.strip("```json\n").strip())
-        except Exception as e:
+        if isinstance(structured_response, BaseModel):
+            return structured_response
+
+        schema = getattr(self._llm, "_response_format", {}).get("schema")
+        if schema is None:
             raise LLMException(
                 agent=AgentEnum.RESEARCH,
-                exp=e,
-                message="Не удалось разобрать JSON из ответа LLM"
+                message="LLM не имеет _response_format для Pydantic модели"
             )
 
-        return structured_output
+        return schema(**structured_response)
+

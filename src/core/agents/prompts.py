@@ -51,7 +51,7 @@ class DialogPromptTemplates:
         return messages
 
 
-class ResearchPromptTemplates: # TODO
+class ResearchPromptTemplates: 
     @classmethod
     async def build_message(
         cls,
@@ -81,5 +81,4 @@ class ResearchPromptTemplates: # TODO
         messages.append(
             HumanMessage(content=message.content)
         )
-        print(messages)
         return messages 
