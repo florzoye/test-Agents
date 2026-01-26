@@ -1,10 +1,11 @@
 import asyncio
-from typing import Optional, Dict, TYPE_CHECKING
+from typing import Any, Optional, Dict, TYPE_CHECKING
 from abc import ABC, abstractmethod
 
 from langchain_core.runnables import Runnable
 from langchain.messages import SystemMessage, AnyMessage
-from langchain_core.language_models import BaseChatModel 
+from langchain_core.language_models import BaseChatModel
+from pydantic import BaseModel 
 
 from src.models.client_model import ClientModel
 from src.models.messages import BaseMessage
@@ -17,6 +18,7 @@ from utils.retry_handlers import log_retry_simple
 
 class BaseLLM(ABC):
     _instance = None
+    _response_format: Any = None 
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -26,6 +28,22 @@ class BaseLLM(ABC):
     @abstractmethod
     async def get_llm(self) -> BaseChatModel:
         ...
+
+    def with_structured_output(
+        self, 
+        schema: type, 
+        method: str = "json_schema", 
+        include_raw: bool = False
+    ) -> "BaseLLM":
+        """
+        Устанавливает Pydantic/TypedDict/JSON schema для structured output.
+        """
+        self._response_format = {
+            "schema": schema,
+            "method": method,
+            "include_raw": include_raw
+        }
+        return self
 
 
 class BaseAgentSingleton(ABC):
@@ -83,13 +101,13 @@ class BaseAgentSingleton(ABC):
         result_raw: dict,
         *,
         client_model: ClientModel,
-    ) -> object: ...
+    ) -> BaseMessage | dict | BaseModel: ...
 
     async def execute(
         self, 
         client_model: ClientModel, 
         user_message: BaseMessage
-    ) -> BaseMessage | Dict:
+    ) -> BaseMessage | Dict | BaseModel:
         
         from data.init_configs import get_config
         base_config = get_config().BASE_CONFIG
